@@ -5,8 +5,10 @@ Guidance for Claude Code working in this repo.
 ## What this is
 
 `mks.sh` — a static personal portfolio styled as a terminal session, plus a
-small blog. Deployed as a GitHub Page at **mks-01.github.io** (repo
-`MKS-01/about-me`). There is no build step, no framework, no dependencies —
+small blog. Deployed as a GitHub Page at **mks-01.github.io/whoami**
+(repo `MKS-01/whoami`, renamed from `about-me` July 2026 — GitHub redirects
+the old URL, but that redirect dies if anything ever reclaims the old name,
+so update links rather than relying on it). There is no build step, no framework, no dependencies —
 open a file and it runs.
 
 ```
