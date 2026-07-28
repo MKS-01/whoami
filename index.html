@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MKS</title>
 <meta name="description" content="MKS — mobile, security, tinkerer. Old curiosities, new experiments — held together with duct tape and caffeine.">
-<link rel="icon" href="favicon.svg">
+<link rel="icon" href="favicon.svg?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 <style>
   /* ── deck-only layout. Shared tokens + terminal grammar live in
      style.css; everything below is unique to this page. ───────── */
@@ -33,15 +34,180 @@
     max-width: 720px;
   }
 
-  /* below-the-fold screens hold their output until scrolled into view */
+  /* below-the-fold screens hold their output until scrolled into view.
+     The .dither arm of this gate lives BELOW the passes — see the note
+     there; putting it here silently does nothing. */
   .reveal .in { animation-play-state: paused; }
   .reveal.on .in { animation-play-state: running; }
 
-  /* only the screen's FIRST prompt loses its top margin — the blog screen
-     runs two ($ ls ~/blog, then $ ls ~/weekend-hacks/wip) and the second
-     needs its normal rhythm to read as a separate command */
+  /* ── pixel-dither reveal ─────────────────────────
+     A screen's text emerges from a field of blocks that coarsens away in
+     three passes: solid → ▓ → ▒ → gone. It is three stacked checkerboard
+     layers rather than one animated pattern, because a layer can only fade
+     as a whole — staggering their exits is what produces the dissolve.
+     steps() timing is the point: it reads as pixels dropping out, not as a
+     soft crossfade. Total ~520ms, overlapping the .in print underneath. */
+  .content { position: relative; }
+  .dither {
+    position: absolute;
+    inset: -10px -14px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .dither i { position: absolute; inset: 0; display: block; }
+
+  /* pass 1 — solid cover */
+  .dither i:nth-child(1) {
+    background: var(--bg);
+    animation: ditherOut 200ms steps(2) both;
+  }
+  /* pass 2 — half the cells left, coarse grid */
+  .dither i:nth-child(2) {
+    background-image: repeating-conic-gradient(var(--bg) 0% 25%, transparent 0% 50%);
+    background-size: 18px 18px;
+    animation: ditherOut 240ms steps(3) 150ms both;
+  }
+  /* pass 3 — fine grid, accent-tinted: the last cells sparkle out.
+     color-mix degrades to "no layer" on pre-2023 browsers, which just
+     costs the sparkle — the reveal still completes. */
+  .dither i:nth-child(3) {
+    background-image: repeating-conic-gradient(color-mix(in srgb, var(--accent) 11%, var(--bg)) 0% 25%, transparent 0% 50%);
+    background-size: 9px 9px;
+    background-position: 4px 0;
+    animation: ditherOut 280ms steps(4) 280ms both;
+  }
+  @keyframes ditherOut { from { opacity: 1; } to { opacity: 0; } }
+
+  /* ⚠ This gate MUST come after the three passes above and MUST outrank
+     them. Each pass sets the `animation:` shorthand, which resets
+     animation-play-state to `running` — an earlier `.reveal .dither i`
+     rule has equal specificity, loses, and every below-the-fold screen
+     burns its dissolve on page load, so you scroll down to already-revealed
+     text. `:not(.on)` buys the extra class that makes this stick. */
+  .reveal:not(.on) .dither i { animation-play-state: paused; }
+
+  /* A card's dither is driven by .live, not by the screen gate: it must be
+     able to re-run every time that card comes round again. Killing
+     `animation-name` (rather than pausing) is what allows the restart — a
+     paused animation that already finished stays finished, so re-adding
+     .live would dissolve nothing. Same specificity trick as above. */
+  .card:not(.live) .dither i { animation-name: none; opacity: 1; }
+
+  /* ── projects track ───────────────────────────────
+     The three project man pages used to be three snap screens; they are now
+     one screen with a horizontal track, so the whole deck is 3 scrolls
+     (owner's cap, July 2026). Horizontal snap is safe to nest inside the
+     deck's vertical mandatory snap — they act on different axes — but note
+     this is `x` here and `y` on <html>; don't merge the two declarations.
+     scrollbar-width/::-webkit-scrollbar hide the strip: the segments below
+     are the position indicator. */
+  .mantrack {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;   /* a swipe past the end must not fire the browser's back gesture */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    outline: none;
+  }
+  .mantrack::-webkit-scrollbar { display: none; }
+  .mantrack:focus-visible { outline: 1px dotted var(--text-faint); outline-offset: 6px; }
+  .card {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+    position: relative;   /* anchors the card's own .dither */
+  }
+  /* the card's first line is a `$ man …` prompt and sits at the top of the
+     screen's stack, same as the old per-project screens did */
+  .card > .prompt { margin-top: 0; }
+  /* the screen-level dither bleeds 14px sideways; inside a card that bleed
+     lands in the scroll axis and adds a sliver of dead scroll past the last
+     card, so square it off here */
+  .card > .dither { inset: -10px 0; }
+
+  /* ── the one asymmetric screen ────────────────────
+     On #projects the mac sits LEFT and the man page reads on the right.
+     Done with transform rather than by changing `left`, so the swap rides
+     the compositor as you scroll in instead of relaying out a fixed
+     element. -580px is the exact mirror: the mac's left edge moves from
+     calc(50% + 90px) to calc(50% - 490px), its 400px width included.
+     Desktop only — at ≤1020px the mac docks bottom-centre and there is no
+     left or right to swap. */
+  @media (min-width: 1021px) {
+    .mac { transition: transform 620ms var(--ease-out); }
+    .mac.flip { transform: translateY(-50%) translateX(-580px); }
+    #projects .inner { justify-content: flex-end; }
+  }
+
+  /* position indicator: three blocks + a `1/3` counter, in the man-page's
+     own faint register. The active block's fill is also the auto-advance
+     countdown — it drains over one interval, and freezes when the track is
+     paused, so the bar explains the behaviour without any copy. */
+  .tbar {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 1.6rem;
+  }
+  .segs { display: flex; gap: 4px; }
+  .segs i {
+    display: block;
+    width: 26px;
+    height: 3px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .segs i b {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+  }
+  /* At rest the current segment is simply full. The drain animation is
+     added only while the timer is actually running (.running) and freezes
+     with it (.paused) — otherwise an off-screen or paused track would show
+     a countdown to an advance that isn't coming. */
+  .segs i.on b { width: 100%; }
+  .tbar.running .segs i.on b { animation: segFill var(--dwell, 7s) linear both; }
+  .tbar.running.paused .segs i.on b { animation-play-state: paused; }
+  .segs i.done b { width: 100%; opacity: 0.35; }
+  @keyframes segFill { from { width: 0; } to { width: 100%; } }
+  .tcount {
+    color: var(--text-faint);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── ambient pixel field ─────────────────────────
+     Faint grid behind everything, masked to a soft centre and panned one
+     cell per 40s so the page is never quite static. Fixed layer, transform
+     only — no layout cost. z-index:-1 keeps it under the text. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -40px;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 18%, transparent 76%);
+    mask-image: radial-gradient(ellipse at 50% 42%, #000 18%, transparent 76%);
+    animation: drift 40s linear infinite;
+  }
+  @keyframes drift { to { transform: translate3d(32px, 32px, 0); } }
+
+  /* only the screen's FIRST prompt loses its top margin — any later command
+     on the same screen needs its normal rhythm to read as separate.
+     The `.dither +` arm is the same rule: the reveal overlay is .content's
+     real first child, so the prompt is only first *visible* child. Don't
+     collapse these into `.detail-screen .prompt` — that would zero the
+     second command's margin too. */
   .screen .inner > section:first-child .prompt,
-  .detail-screen .content > .prompt:first-child { margin-top: 0; }
+  .detail-screen .content > .prompt:first-child,
+  .detail-screen .content > .dither + .prompt { margin-top: 0; }
 
   /* ── projects + blog index (same two-column list shape) ── */
   .projects { list-style: none; }
@@ -56,9 +222,49 @@
   }
   .projects a:active { transform: scale(0.995); }
 
+  /* Hover is the same dither vocabulary as the reveal: an accent pixel wash
+     behind the row, and a block cursor stepping in ahead of the name — the
+     underline it replaces was the one non-terminal gesture left on the page.
+     The cursor grows inside the fixed-width .name column, so the desc
+     doesn't shift. isolate + z-index:-1 puts the wash under the text
+     without letting it escape the row. */
   @media (hover: hover) and (pointer: fine) {
-    .projects a:hover .name { text-decoration: underline; text-underline-offset: 3px; }
+    .projects a { position: relative; isolation: isolate; }
+    .projects a::before {
+      content: "";
+      position: absolute;
+      inset: -1px -8px;
+      z-index: -1;
+      background-image: repeating-conic-gradient(var(--accent) 0% 25%, transparent 0% 50%);
+      background-size: 6px 6px;
+      opacity: 0;
+      transition: opacity 160ms steps(3);
+    }
+    .projects a:hover::before { opacity: 0.17; }
     .projects a:hover .desc { color: var(--text); }
+    /* the description's bold fragment gets an accent block-underline that
+       wipes across in steps — same pixel grammar as the reveal. It's a
+       background, not text-decoration, so it can animate its width; a full
+       block highlight was rejected because mid-sweep it puts light text on
+       a solid accent and the contrast drops out. */
+    .projects .desc b {
+      background-image: linear-gradient(var(--accent), var(--accent));
+      background-repeat: no-repeat;
+      background-position: 0 100%;
+      background-size: 0 2px;
+      transition: background-size 220ms steps(6);
+    }
+    .projects a:hover .desc b { background-size: 100% 2px; }
+    .projects .name::before {
+      content: "";
+      display: inline-block;
+      width: 0;
+      height: 0.95em;
+      background: var(--accent);
+      vertical-align: -0.14em;
+      transition: width 140ms steps(3), margin-right 140ms steps(3);
+    }
+    .projects a:hover .name::before { width: 0.5em; margin-right: 0.3em; }
   }
 
   .projects .name {
@@ -77,6 +283,21 @@
   /* post slugs run longer than project names — widen that column so they
      don't wrap mid-slug. Fits ~23 chars; keep slugs at or under that. */
   #blog .projects .name { width: 12.5rem; }
+
+  /* date + read-time, the `ls -l` columns the listing was missing. It sits
+     INSIDE .desc rather than beside it: `.projects a` is a two-item flex
+     row (name | desc), so a third child would land in a third column and
+     fight the desc for width. As a block inside the desc it simply drops
+     under the line, and reflows with it on mobile. Scoped to #blog — the
+     mac's pizow app already owns a `.meta`. */
+  #blog .desc .meta {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--text-faint);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+  }
+  #blog .desc .meta .sep { margin: 0 0.15rem; }
 
   @media (max-width: 540px) {
     .projects a { flex-direction: column; gap: 0.1rem; padding: 0.5rem 0; }
@@ -109,7 +330,7 @@
     margin: 0 auto;
     border: 2px solid var(--text-faint);
     border-radius: 12px;
-    background: rgba(139, 148, 158, 0.05);
+    background: var(--surface-soft);
     padding-top: 16px;
     transform-origin: bottom center;
     transform: rotateX(-84deg);
@@ -162,6 +383,49 @@
   .mac[data-app="blog"] .app-blog {
     opacity: 1;
     transform: none;
+  }
+
+  /* ── mac app swap: the same pixel wipe, one screen down ──
+     The apps used to just crossfade, which was the last soft transition
+     left on the page. Now the swap happens behind a block wipe: the cells
+     cover the screen, then coarsen away over ~420ms while the incoming app
+     fades in underneath. Finer cells than the page reveal (12px/6px vs
+     18px/9px) because the lid is only 360px wide — the page's grid at this
+     size reads as three big squares, not as pixels.
+
+     At rest the layers carry no animation and sit at opacity 0; adding
+     .swap applies the animations fresh, which is what makes it re-runnable
+     on every change (a paused-and-finished animation never replays). This
+     is NOT lid motion — the lid stays hardcoded open, as it must. */
+  .mac .mdither {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: 10px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .mac .mdither i {
+    position: absolute;
+    inset: 0;
+    display: block;
+    opacity: 0;
+    animation-name: none;
+  }
+  .mac.swap .mdither i:nth-child(1) {
+    background: var(--bg);
+    animation: ditherOut 160ms steps(2) both;
+  }
+  .mac.swap .mdither i:nth-child(2) {
+    background-image: repeating-conic-gradient(var(--bg) 0% 25%, transparent 0% 50%);
+    background-size: 12px 12px;
+    animation: ditherOut 200ms steps(3) 110ms both;
+  }
+  .mac.swap .mdither i:nth-child(3) {
+    background-image: repeating-conic-gradient(color-mix(in srgb, var(--accent) 14%, var(--bg)) 0% 25%, transparent 0% 50%);
+    background-size: 6px 6px;
+    background-position: 3px 0;
+    animation: ditherOut 220ms steps(4) 200ms both;
   }
 
   /* home app: terminal lines print in after the lid opens */
@@ -279,7 +543,7 @@
   }
   .pbar {
     height: 4px;
-    background: rgba(139, 148, 158, 0.18);
+    background: var(--surface);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -318,7 +582,7 @@
   .gauge .bar {
     flex: 1;
     height: 5px;
-    background: rgba(139, 148, 158, 0.18);
+    background: var(--surface);
     border-radius: 3px;
     overflow: hidden;
   }
@@ -384,7 +648,7 @@
   /* less's inverted status line at the foot of the pager */
   .app-blog .lstatus {
     margin-top: 0.5rem;
-    background: rgba(139, 148, 158, 0.16);
+    background: var(--surface);
     color: var(--text-faint);
     font-size: 0.68rem;
     padding: 1px 5px;
@@ -414,22 +678,48 @@
   @media (prefers-reduced-motion: reduce) {
     .type { width: 24ch; }
     .hint .down { animation: none; }
+    /* keep `both` fill so the layers still end up cleared, just instantly */
+    .dither i { animation-duration: 1ms !important; animation-delay: 0s !important; }
+    body::before { animation: none; }
+    /* auto-advance is off in this mode, so the countdown fill would be
+       lying about what happens next — show the segment simply as current */
+    .segs i.on b { animation: none; width: 100%; }
+    .mac,
     .mac * { animation: none !important; transition: none !important; }
     .mac .lid { transform: none !important; }
     .mac .tline, .mac .dcursor { opacity: 1 !important; }
   }
 
-  /* ── scroll hint ────────────────────────────────── */
+  /* ── scroll hint ──────────────────────────────────
+     Was --text-faint at 0.8rem: the dimmest token at the smallest size, and
+     it disappeared against the background. It reads as a shell comment, so
+     the `#` keeps the faint colour while the sentence itself sits at
+     --text-dim / 0.85rem like every other output line.
+     The arrow is the page's only "do this" cue — accent-coloured, and it
+     travels down and fades out on a loop instead of bobbing in place, so it
+     points somewhere rather than just wobbling. */
   .hint {
     margin-top: 2.5rem;
-    color: var(--text-faint);
-    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
   }
+  .hint .c { color: var(--text-faint); }
   .hint .down {
     display: inline-block;
-    animation: bob 2s ease-in-out infinite;
+    color: var(--accent);
+    animation: drip 2.2s var(--ease-out) infinite;
   }
-  @keyframes bob { 50% { transform: translateY(3px); } }
+  /* Never fades fully out: the arrow sits mid-sentence, and a glyph that
+     vanishes reads as a rendering glitch rather than a cue. It bottoms out
+     at 0.18 and snaps back up on that same dim frame, so the reset is
+     invisible without leaving a hole in the line. */
+  @keyframes drip {
+    0%   { transform: translateY(-1px); opacity: 0.4; }
+    30%  { transform: translateY(3px);  opacity: 1; }
+    62%  { transform: translateY(9px);  opacity: 0.18; }
+    63%  { transform: translateY(-1px); opacity: 0.18; }
+    100% { transform: translateY(-1px); opacity: 0.4; }
+  }
 
   /* ── short viewports (laptops) ──────────────────────
      The home stack is ~760px tall; on shorter screens the flex-centering
@@ -447,13 +737,14 @@
     .projects a { padding: 0.15rem 0; }
   }
 </style>
-<noscript><style>.reveal .in { animation-play-state: running; } .mac .lid { transform: none; } .mac .tline, .mac .dcursor { opacity: 1; }</style></noscript>
+<noscript><style>.reveal .in, .reveal:not(.on) .dither i { animation-play-state: running; } .mac .lid { transform: none; } .mac .tline, .mac .dcursor { opacity: 1; }</style></noscript>
 </head>
 <body>
 <main>
   <div class="screen home" id="home">
     <div class="inner">
       <div class="content">
+      <span class="dither" aria-hidden="true"><i></i><i></i><i></i></span>
       <header class="in" style="--i:0">
         <h1><svg class="alien" viewBox="0 0 128 128" aria-hidden="true"><path fill="var(--accent)" d="M64,4.5C36.2,4.5,8,28.1,8,55.8s44.3,67.7,56.2,67.7c13.2,0,55.8-39.9,55.8-67.7S91.8,4.5,64,4.5z"/><path fill="var(--accent)" d="M64,4.5c14.52,0,29.13,6.42,39.8,16.5C93,9.46,77.17,2,61.47,2c-27.8,0-56,23.6-56,51.3c0,15.6,14.06,35.11,28.47,49.18C20.46,88.64,8,70.49,8,55.8C8,28.1,36.2,4.5,64,4.5z"/><path fill="var(--bg)" d="M64,102.35c-9.37,0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74,1.17-1.18,2-1.15c0.3,0,0.6,0.05,0.88,0.15C53.1,90.8,57.23,93,64,93s10.92-2.16,15.63-3.63c0.28-0.1,0.58-0.15,0.88-0.15c0.83-0.03,1.61,0.41,2,1.15c0.51,1.13,0.35,2.46-0.41,3.44C80.06,96.83,73.37,102.35,64,102.35z M54.05,81.56c-3,3.88-17.71,3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38,28.85,6.36S57.72,77.92,54.05,81.56z M80.08,52.58c9.66-9.7,25.52-9.62,28.85-6.33s3.53,19.11-6.13,28.8S77.64,85,73.94,81.38S70.42,62.28,80.08,52.58z"/></svg> mks<span class="tld">.sh</span><span class="cursor"></span></h1>
         <p class="role"><span class="k">m0b1l3</span><span class="sep">·</span><span class="k">s3cur1ty</span><span class="sep">·</span><span class="k">71nk3r3r</span></p>
@@ -510,11 +801,13 @@
         <p class="signoff in" style="--i:11">brew install cold-brew <span class="comment"># required dependency ☕</span></p>
       </footer>
 
-      <p class="hint in" style="--i:12"># scroll <span class="down">↓</span> for the long version</p>
+      <p class="hint in" style="--i:12"><span class="c">#</span> scroll <span class="down">↓</span> for the long version</p>
       </div>
       <div class="mac open" data-app="home" aria-hidden="true">
         <div class="lid">
           <div class="cam"></div>
+          <!-- pixel wipe over the mac's screen, re-run on every app swap -->
+          <span class="mdither" aria-hidden="true"><i></i><i></i><i></i></span>
           <div class="app app-home">
             <div class="tline prompt-line" style="--w:38%;--n:0"></div>
             <div class="tline" style="--w:62%;--n:1;--c:var(--accent)"></div>
@@ -562,7 +855,7 @@
                 <div class="bline" style="--w:70%"></div>
               </div>
             </div>
-            <p class="lstatus">~/blog/*.md <span class="cycle"><span class="pcts"><span>18%</span><span>46%</span><span>73%</span></span></span></p>
+            <p class="lstatus">~/blogs/*.md <span class="cycle"><span class="pcts"><span>18%</span><span>46%</span><span>73%</span></span></span></p>
           </div>
         </div>
         <div class="base"><i class="notch"></i></div>
@@ -570,125 +863,272 @@
     </div>
   </div>
 
-  <div class="screen detail-screen reveal" id="readback">
+  <div class="screen detail-screen reveal" id="blog">
     <div class="inner">
       <div class="content">
-      <p class="prompt in" style="--i:0"><span class="cmd">man readback</span></p>
-      <div class="output">
-        <p class="man-head in" style="--i:1"><span>READBACK(1)</span><span>Weekend Hacks Manual</span></p>
-        <p class="man-sec in" style="--i:2">NAME</p>
-        <p class="man-body in" style="--i:3"><span class="pname">readback</span> — any article → <b>offline audiobook</b></p>
-        <p class="man-sec in" style="--i:4">DESCRIPTION</p>
-        <p class="man-body in" style="--i:5">Paste a URL. Reader-mode strips the junk, CSM-1B on MLX reads it back in a cloned voice — all on Apple Silicon. No cloud, no API keys; your reading list stays yours.</p>
-        <p class="man-sec in" style="--i:6">STACK</p>
-        <p class="man-body in" style="--i:7"><b>mlx</b>(1), <b>csm-1b</b>(1), <b>fastapi</b>(1), <b>bun</b>(1), <b>ink</b>(1)</p>
-        <p class="man-sec in" style="--i:8">SEE ALSO</p>
-        <div class="man-body">
-          <p class="cmdline in" style="--i:9">open <a href="https://mks-01.github.io/readback/">mks-01.github.io/readback</a> <span class="comment"># live demo</span></p>
-          <p class="cmdline in" style="--i:10">git clone <a href="https://github.com/MKS-01/readback">github.com/MKS-01/readback</a></p>
+      <span class="dither" aria-hidden="true"><i></i><i></i><i></i></span>
+      <p class="prompt in" style="--i:0"><span class="cmd">ls ~/blogs</span></p>
+      <ul class="output projects">
+        <li class="in" style="--i:1">
+          <a href="blog/the-mesh-needed-two.html">
+            <span class="name">the-mesh-needed-two</span>
+            <p class="desc">a mesh needs two boards — so i built what one can do<span class="meta">2026-07-26 <span class="sep">·</span> 3 min</span></p>
+          </a>
+        </li>
+        <li class="in" style="--i:2">
+          <a href="blog/home-server-on-512mb.html">
+            <span class="name">home-server-on-512mb</span>
+            <p class="desc">what a $15 board runs, and how it fits together<span class="meta">2026-07-21 <span class="sep">·</span> 2 min</span></p>
+          </a>
+        </li>
+        <li class="in" style="--i:3">
+          <a href="blog/why-i-built-readback.html">
+            <span class="name">why-i-built-readback</span>
+            <p class="desc">started as a voice agent — the reader is what was left<span class="meta">2026-07-21 <span class="sep">·</span> 5 min</span></p>
+          </a>
+        </li>
+      </ul>
+      </div>
+    </div>
+  </div>
+  <div class="screen detail-screen reveal" id="projects">
+    <div class="inner">
+      <div class="content">
+      <!-- one screen, three man pages on a horizontal track. Each card
+           carries its own .dither so it dissolves in as it lands. -->
+      <div class="mantrack" id="mantrack" tabindex="0" role="group"
+           aria-roledescription="carousel" aria-label="weekend-hacks manuals">
+        <article class="card" id="readback" aria-label="man readback">
+          <span class="dither" aria-hidden="true"><i></i><i></i><i></i></span>
+        <p class="prompt in" style="--i:0"><span class="cmd">man readback</span></p>
+        <div class="output">
+          <p class="man-head in" style="--i:1"><span>READBACK(1)</span><span>Weekend Hacks Manual</span></p>
+          <p class="man-sec in" style="--i:2">NAME</p>
+          <p class="man-body in" style="--i:3"><span class="pname">readback</span> — any article → <b>offline audiobook</b></p>
+          <p class="man-sec in" style="--i:4">DESCRIPTION</p>
+          <p class="man-body in" style="--i:5">Paste a URL. Reader-mode strips the junk, CSM-1B on MLX reads it back in a cloned voice — all on Apple Silicon. No cloud, no API keys; your reading list stays yours.</p>
+          <p class="man-sec in" style="--i:6">STACK</p>
+          <p class="man-body in" style="--i:7"><b>mlx</b>(1), <b>csm-1b</b>(1), <b>fastapi</b>(1), <b>bun</b>(1), <b>ink</b>(1)</p>
+          <p class="man-sec in" style="--i:8">SEE ALSO</p>
+          <div class="man-body">
+            <p class="cmdline in" style="--i:9">open <a href="https://mks-01.github.io/readback/">mks-01.github.io/readback</a> <span class="comment"># live demo</span></p>
+            <p class="cmdline in" style="--i:10">git clone <a href="https://github.com/MKS-01/readback">github.com/MKS-01/readback</a></p>
+          </div>
         </div>
+        </article>
+        <article class="card" id="pizow" aria-label="man pizow">
+          <span class="dither" aria-hidden="true"><i></i><i></i><i></i></span>
+        <p class="prompt in" style="--i:0"><span class="cmd">man pizow</span></p>
+        <div class="output">
+          <p class="man-head in" style="--i:1"><span>PIZOW(1)</span><span>Weekend Hacks Manual</span></p>
+          <p class="man-sec in" style="--i:2">NAME</p>
+          <p class="man-body in" style="--i:3"><span class="pname">pizow</span> — $15 Pi Zero W → <b>home server</b></p>
+          <p class="man-sec in" style="--i:4">DESCRIPTION</p>
+          <p class="man-body in" style="--i:5">Deploy scripts take a blank SD card to a running server: real-time monitoring dashboard and NAS, nginx + pm2 underneath. Claude Code skills drive the whole thing hands-off.</p>
+          <p class="man-sec in" style="--i:6">STACK</p>
+          <p class="man-body in" style="--i:7"><b>pi-zero-w</b>(4), <b>node</b>(1), <b>next.js</b>(1), <b>nginx</b>(8), <b>pm2</b>(1)</p>
+          <p class="man-sec in" style="--i:8">SEE ALSO</p>
+          <div class="man-body">
+            <p class="cmdline in" style="--i:9">git clone <a href="https://github.com/MKS-01/pizow">github.com/MKS-01/pizow</a></p>
+          </div>
+        </div>
+        </article>
+        <article class="card" id="mac-mlx-cluster" aria-label="man mac-mlx-cluster">
+          <span class="dither" aria-hidden="true"><i></i><i></i><i></i></span>
+        <p class="prompt in" style="--i:0"><span class="cmd">man mac-mlx-cluster</span></p>
+        <div class="output">
+          <p class="man-head in" style="--i:1"><span>MAC-MLX-CLUSTER(1)</span><span>Weekend Hacks Manual</span></p>
+          <p class="man-sec in" style="--i:2">NAME</p>
+          <p class="man-body in" style="--i:3"><span class="pname">mac-mlx-cluster</span> — spare Mac → <b>LLM cluster</b></p>
+          <p class="man-sec in" style="--i:4">DESCRIPTION</p>
+          <p class="man-body in" style="--i:5">Turns a spare Mac into a GPU serving LLMs via MLX; chain Macs over Thunderbolt to run bigger models. Ships a chatbot and a coding agent — all offline.</p>
+          <p class="man-sec in" style="--i:6">STACK</p>
+          <p class="man-body in" style="--i:7"><b>mlx</b>(1), <b>typescript</b>(1), <b>bun</b>(1), <b>ink</b>(1), <b>thunderbolt</b>(4)</p>
+          <p class="man-sec in" style="--i:8">SEE ALSO</p>
+          <div class="man-body">
+            <p class="cmdline in" style="--i:9">git clone <a href="https://github.com/MKS-01/mac-mlx-cluster">github.com/MKS-01/mac-mlx-cluster</a></p>
+          </div>
+        </div>
+        </article>
+      </div>
+      <div class="tbar">
+        <span class="segs" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i></span>
+        <span class="tcount" aria-live="polite">1/3</span>
       </div>
       </div>
     </div>
   </div>
 
-  <div class="screen detail-screen reveal" id="pizow">
-    <div class="inner">
-      <div class="content">
-      <p class="prompt in" style="--i:0"><span class="cmd">man pizow</span></p>
-      <div class="output">
-        <p class="man-head in" style="--i:1"><span>PIZOW(1)</span><span>Weekend Hacks Manual</span></p>
-        <p class="man-sec in" style="--i:2">NAME</p>
-        <p class="man-body in" style="--i:3"><span class="pname">pizow</span> — $15 Pi Zero W → <b>home server</b></p>
-        <p class="man-sec in" style="--i:4">DESCRIPTION</p>
-        <p class="man-body in" style="--i:5">Deploy scripts take a blank SD card to a running server: real-time monitoring dashboard and NAS, nginx + pm2 underneath. Claude Code skills drive the whole thing hands-off.</p>
-        <p class="man-sec in" style="--i:6">STACK</p>
-        <p class="man-body in" style="--i:7"><b>pi-zero-w</b>(4), <b>node</b>(1), <b>next.js</b>(1), <b>nginx</b>(8), <b>pm2</b>(1)</p>
-        <p class="man-sec in" style="--i:8">SEE ALSO</p>
-        <div class="man-body">
-          <p class="cmdline in" style="--i:9">git clone <a href="https://github.com/MKS-01/pizow">github.com/MKS-01/pizow</a></p>
-        </div>
-      </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="screen detail-screen reveal" id="mac-mlx-cluster">
-    <div class="inner">
-      <div class="content">
-      <p class="prompt in" style="--i:0"><span class="cmd">man mac-mlx-cluster</span></p>
-      <div class="output">
-        <p class="man-head in" style="--i:1"><span>MAC-MLX-CLUSTER(1)</span><span>Weekend Hacks Manual</span></p>
-        <p class="man-sec in" style="--i:2">NAME</p>
-        <p class="man-body in" style="--i:3"><span class="pname">mac-mlx-cluster</span> — spare Mac → <b>LLM cluster</b></p>
-        <p class="man-sec in" style="--i:4">DESCRIPTION</p>
-        <p class="man-body in" style="--i:5">Turns a spare Mac into a GPU serving LLMs via MLX; chain Macs over Thunderbolt to run bigger models. Ships a chatbot and a coding agent — all offline.</p>
-        <p class="man-sec in" style="--i:6">STACK</p>
-        <p class="man-body in" style="--i:7"><b>mlx</b>(1), <b>typescript</b>(1), <b>bun</b>(1), <b>ink</b>(1), <b>thunderbolt</b>(4)</p>
-        <p class="man-sec in" style="--i:8">SEE ALSO</p>
-        <div class="man-body">
-          <p class="cmdline in" style="--i:9">git clone <a href="https://github.com/MKS-01/mac-mlx-cluster">github.com/MKS-01/mac-mlx-cluster</a></p>
-        </div>
-      </div>
-      </div>
-    </div>
-  </div>
 
 
-
-  <!-- ── blog index (+ the wip line, folded in here) ─────────────────
+  <!-- ── blog index ───────────────────────────────────────────────────
        ADD A POST = 2 steps:
          1. copy blog/_template.html → blog/<slug>.html, fill it in
          2. paste the <li> below into the list, NEWEST FIRST, then push the
-            two wip lines' --i up by one so the print order stays sequential
+            --i of every <li> after it up by one so the print order stays
+            sequential
 
        <li class="in" style="--i:N">
          <a href="blog/<slug>.html">
            <span class="name"><slug></span>
-           <p class="desc">one dry line, same shape as a project</p>
+           <p class="desc">one dry line, same shape as a project<span
+             class="meta">YYYY-MM-DD <span class="sep">·</span> N min</span></p>
          </a>
        </li>
+
+       The date and read-time must match the post's own `written … · N min`
+       meta line — they're two hand-kept copies, so change both together.
 
        Keep it to ~10 posts and slugs to ≤23 chars — this screen is sized
        for one viewport, and longer slugs wrap the name column.
   ── -->
-  <div class="screen detail-screen reveal" id="blog">
-    <div class="inner">
-      <div class="content">
-      <p class="prompt in" style="--i:0"><span class="cmd">ls ~/blog</span></p>
-      <ul class="output projects">
-        <li class="in" style="--i:1">
-          <a href="blog/home-server-on-512mb.html">
-            <span class="name">home-server-on-512mb</span>
-            <p class="desc">what a $15 board runs, and how it fits together</p>
-          </a>
-        </li>
-        <li class="in" style="--i:2">
-          <a href="blog/why-i-built-readback.html">
-            <span class="name">why-i-built-readback</span>
-            <p class="desc">started as a voice agent — the reader is what was left</p>
-          </a>
-        </li>
-      </ul>
-
-      <p class="prompt in" style="--i:3"><span class="cmd">ls ~/weekend-hacks/wip</span></p>
-      <div class="output">
-        <p class="reading in" style="--i:4"><span class="arrow">›</span>still a few unfinished weekend projects — updating soon<span class="cursor"></span></p>
-      </div>
-      </div>
-    </div>
-  </div>
 </main>
 <nav class="rail" aria-label="sections">
   <span class="sess">[mks]</span>
-  <a href="#home" class="active">0:home</a>
-  <a href="#readback">1:readback</a>
-  <a href="#pizow">2:pizow</a>
-  <a href="#mac-mlx-cluster">3:mlx</a>
-  <a href="#blog">4:blog</a>
+  <a href="#home" class="active">0:whoami</a>
+  <a href="#blog">1:blogs</a>
+  <!-- tmux pane suffix: .N is which card the track is showing -->
+  <a href="#projects">2:projects<span class="pane">.1</span></a>
 </nav>
 <div class="site-foot" aria-hidden="true">© <span id="year">2026</span> mks</div>
 <script>
+  /* ── projects track ─────────────────────────────────────────────────
+     One screen, three man pages, auto-advancing. The rule the whole thing
+     is built around: never slide text out from under someone reading it.
+     Hover, focus, touch or a manual scroll holds the track; it only
+     resumes after a quiet spell, and prefers-reduced-motion turns
+     auto-advance off entirely (the track stays swipeable). */
+  const mac = document.querySelector(".mac");
+  /* Single door for changing the mac's app, so the pixel wipe fires no
+     matter who asks — the screen observer or the projects track. Skips the
+     wipe when the app hasn't actually changed (the observer re-fires on
+     every crossing) and on the very first set, which is page load. */
+  let macBooted = false;
+  const setApp = (id) => {
+    if (!mac || !id || mac.dataset.app === id) return;
+    mac.dataset.app = id;
+    if (!macBooted) { macBooted = true; return; }
+    mac.classList.remove("swap");
+    void mac.offsetWidth;      /* reflow, or re-adding the class is a no-op */
+    mac.classList.add("swap");
+  };
+  const track = document.getElementById("mantrack");
+  const cards = track ? [...track.querySelectorAll(".card")] : [];
+  let cardIdx = 0;
+
+  if (track && cards.length) {
+    const segs = [...document.querySelectorAll(".segs i")];
+    const count = document.querySelector(".tcount");
+    const tbar = document.querySelector(".tbar");
+    const pane = document.querySelector(".rail .pane");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const DWELL = 7000;    /* time on each card — matches --dwell in the CSS */
+    const IDLE = 10000;    /* quiet time before auto-advance comes back */
+    let tick = null, idleTimer = null, held = false, onScreen = false;
+
+    const paint = () => {
+      cards.forEach((c, i) => c.classList.toggle("live", i === cardIdx));
+      segs.forEach((s, i) => {
+        /* restart the countdown fill: re-adding the class isn't enough,
+           the animation has to be taken off the element and put back */
+        s.classList.remove("on", "done");
+        void s.offsetWidth;
+        s.classList.toggle("on", i === cardIdx);
+        s.classList.toggle("done", i < cardIdx);
+      });
+      if (count) count.textContent = (cardIdx + 1) + "/" + cards.length;
+      if (pane) pane.textContent = "." + (cardIdx + 1);
+      /* the mac has no app for #projects itself — it shows the live card's */
+      if (onScreen) setApp(cards[cardIdx].id);
+    };
+
+    const goCard = (i, smooth) => {
+      cardIdx = (i + cards.length) % cards.length;
+      track.scrollTo({
+        left: cardIdx * track.clientWidth,
+        behavior: smooth && !still.matches ? "smooth" : "auto"
+      });
+      paint();
+    };
+
+    /* Two independent states, and keeping them apart matters:
+         .running — auto mode is on at all (this screen is in view and
+                    motion is allowed). Drives whether the countdown fill
+                    exists.
+         .paused  — someone is engaged right now. Freezes that fill.
+       Folding them together made a hover *remove* the countdown instead of
+       stopping it, so the bar jumped to full — the opposite of "paused". */
+    const stop = () => { clearInterval(tick); tick = null; };
+    const start = () => {
+      stop();
+      if (held || still.matches || !onScreen) return;
+      tick = setInterval(() => goCard(cardIdx + 1, true), DWELL);
+    };
+    const setAuto = (on) => {
+      if (tbar) tbar.classList.toggle("running", !!on && !still.matches);
+    };
+    const hold = () => {
+      held = true;
+      if (tbar) tbar.classList.add("paused");
+      clearTimeout(idleTimer);
+      stop();
+    };
+    const release = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        held = false;
+        if (tbar) tbar.classList.remove("paused");
+        start();
+      }, IDLE);
+    };
+
+    track.addEventListener("mouseenter", hold);
+    track.addEventListener("mouseleave", release);
+    track.addEventListener("focusin", hold);
+    track.addEventListener("focusout", release);
+    ["pointerdown", "touchstart", "wheel"].forEach((ev) =>
+      track.addEventListener(ev, () => { hold(); release(); }, { passive: true }));
+
+    /* manual scroll (swipe, trackpad, or our own scrollTo) — resync the
+       indicator to wherever the track actually landed */
+    let settle;
+    track.addEventListener("scroll", () => {
+      clearTimeout(settle);
+      settle = setTimeout(() => {
+        const i = Math.round(track.scrollLeft / track.clientWidth);
+        if (i !== cardIdx && cards[i]) { cardIdx = i; paint(); }
+      }, 120);
+    }, { passive: true });
+
+    track.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") { hold(); release(); goCard(cardIdx + 1, true); }
+      if (e.key === "ArrowLeft")  { hold(); release(); goCard(cardIdx - 1, true); }
+    });
+
+    /* only runs while the projects screen is the one on screen — an
+       invisible carousel burning through its cards helps nobody */
+    window.__trackScreen = (active) => {
+      onScreen = active;
+      setAuto(active);
+      if (active) {
+        paint();
+        start();
+      } else {
+        /* leaving the screen clears the held state too — otherwise a hover
+           on the way past would leave the track frozen for the next visit */
+        stop();
+        clearTimeout(idleTimer);
+        held = false;
+        if (tbar) tbar.classList.remove("paused");
+      }
+    };
+    window.__trackTo = (id) => {
+      const i = cards.findIndex((c) => c.id === id);
+      if (i > -1) goCard(i, false);
+    };
+    paint();
+  }
+
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) {
@@ -699,13 +1139,18 @@
 
     const rail = [...document.querySelectorAll(".rail a")];
     const screens = [...document.querySelectorAll(".screen")];
-    const mac = document.querySelector(".mac");
     const spy = new IntersectionObserver((entries) => {
       for (const e of entries) {
         if (e.isIntersecting) {
           const i = screens.indexOf(e.target);
           rail.forEach((d, j) => d.classList.toggle("active", j === i));
-          if (mac) mac.dataset.app = e.target.id;
+          /* #projects has no app of its own — the live card names it. The
+             track only auto-advances while this screen is the one on view. */
+          const onTrack = e.target.id === "projects" && cards.length;
+          setApp(onTrack ? cards[cardIdx].id : e.target.id);
+          /* the mac slides to the left half on the projects screen */
+          if (mac) mac.classList.toggle("flip", e.target.id === "projects");
+          if (window.__trackScreen) window.__trackScreen(!!onTrack);
         }
       }
       /* center-line detector: fires when a screen crosses the viewport's
@@ -740,13 +1185,29 @@
     window.addEventListener("scrollend", restoreSnap, { once: true });
     snapTimer = setTimeout(restoreSnap, 1200);
   };
+  /* The landing's `ls ~/weekend-hacks` list still links #readback, #pizow
+     and #mac-mlx-cluster, but those are now cards inside #projects rather
+     than screens of their own. Resolve a card hash to its screen and slide
+     the track to it, so the old links keep meaning what they said. */
+  const resolve = (hash) => {
+    const el = document.getElementById(hash);
+    if (!el) return null;
+    const card = el.closest(".card");
+    return { screen: card ? el.closest(".screen") : el, card: card ? hash : null };
+  };
+  const jump = (hash, smooth) => {
+    const hit = resolve(hash);
+    if (!hit) return false;
+    if (hit.card && window.__trackTo) window.__trackTo(hit.card);
+    goTo(hit.screen, smooth);
+    return true;
+  };
   document.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener("click", (e) => {
-      const target = document.getElementById(a.getAttribute("href").slice(1));
-      if (!target) return;
+      const href = a.getAttribute("href");
+      if (!jump(href.slice(1), true)) return;
       e.preventDefault();
-      goTo(target, true);
-      history.replaceState(null, "", a.getAttribute("href"));
+      history.replaceState(null, "", href);
     });
   });
 
@@ -754,8 +1215,8 @@
      own hash scroll is unreliable under mandatory snap on iOS, same as the
      click case. Redo it ourselves once layout has settled. */
   if (location.hash.length > 1) {
-    const target = document.getElementById(location.hash.slice(1));
-    if (target) requestAnimationFrame(() => goTo(target, false));
+    const hash = location.hash.slice(1);
+    requestAnimationFrame(() => jump(hash, false));
   }
 
   const yr = document.getElementById("year");

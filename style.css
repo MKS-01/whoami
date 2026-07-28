@@ -12,14 +12,82 @@
    only — a blog post is long-form scrolling text and mandatory snap would
    fight it. index.html sets it inline. Don't move it into this file. */
 
+/* ── phosphor: the default palette (July 2026) ──────
+   The site ran cool GitHub-blue on #0d1117 until this pass; it is now a
+   green CRT by default, with amber and the old blue behind the toggle.
+   Because the accent takes over green, the "$ " glyph swaps to amber —
+   the prompt has to stay visually distinct from the links, and it is still
+   the one thing a real shell colours for you.
+   ⚠ favicon.svg hardcodes --accent and --bg as literals (it loads outside
+   the cascade). Change either here and update that file too. */
 :root {
-  --bg: #0d1117;
-  --text: #c9d1d9;
-  --text-dim: #8b949e;
-  --text-faint: #484f58;
-  --accent: #58a6ff;
-  --green: #3fb950;
+  --bg: #070807;
+  --text: #ccd3ca;
+  --text-dim: #8a9588;
+  --text-faint: #474f46;
+  --accent: #4f9a60;
+  --green: #cf7a26;
+
+  /* inert fills — bars, code blocks, the tmux bar. Derived from --text so
+     they stay in the palette's family instead of drifting to neutral grey. */
+  --surface: rgba(204, 211, 202, 0.12);
+  --surface-soft: rgba(204, 211, 202, 0.045);
+  --rail-bg: #0e120e;
+  /* the deck's ambient pixel field — a token so it follows the accent
+     instead of being hardcoded in index.html's inline block */
+  --grid-line: rgba(79, 154, 96, 0.05);
+  /* alien pointer — follows this theme's accent, like the wordmark does.
+     Only favicon.svg is pinned green: it loads outside the cascade. */
+  --ptr: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%20128%20128'%3E%3Cpath%20fill='%234f9a60'%20d='M64%2C4.5C36.2%2C4.5%2C8%2C28.1%2C8%2C55.8s44.3%2C67.7%2C56.2%2C67.7c13.2%2C0%2C55.8-39.9%2C55.8-67.7S91.8%2C4.5%2C64%2C4.5z'/%3E%3Cpath%20fill='%23070807'%20d='M64%2C102.35c-9.37%2C0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74%2C1.17-1.18%2C2-1.15c0.3%2C0%2C0.6%2C0.05%2C0.88%2C0.15C53.1%2C90.8%2C57.23%2C93%2C64%2C93s10.92-2.16%2C15.63-3.63c0.28-0.1%2C0.58-0.15%2C0.88-0.15c0.83-0.03%2C1.61%2C0.41%2C2%2C1.15c0.51%2C1.13%2C0.35%2C2.46-0.41%2C3.44C80.06%2C96.83%2C73.37%2C102.35%2C64%2C102.35z%20M54.05%2C81.56c-3%2C3.88-17.71%2C3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38%2C28.85%2C6.36S57.72%2C77.92%2C54.05%2C81.56z%20M80.08%2C52.58c9.66-9.7%2C25.52-9.62%2C28.85-6.33s3.53%2C19.11-6.13%2C28.8S77.64%2C85%2C73.94%2C81.38S70.42%2C62.28%2C80.08%2C52.58z'/%3E%3C/svg%3E") 4 4, auto;
+  --ptr-link: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='28'%20viewBox='0%200%20183%20128'%3E%3Cpath%20fill='%234f9a60'%20d='M64%2C4.5C36.2%2C4.5%2C8%2C28.1%2C8%2C55.8s44.3%2C67.7%2C56.2%2C67.7c13.2%2C0%2C55.8-39.9%2C55.8-67.7S91.8%2C4.5%2C64%2C4.5z'/%3E%3Cpath%20fill='%23070807'%20d='M64%2C102.35c-9.37%2C0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74%2C1.17-1.18%2C2-1.15c0.3%2C0%2C0.6%2C0.05%2C0.88%2C0.15C53.1%2C90.8%2C57.23%2C93%2C64%2C93s10.92-2.16%2C15.63-3.63c0.28-0.1%2C0.58-0.15%2C0.88-0.15c0.83-0.03%2C1.61%2C0.41%2C2%2C1.15c0.51%2C1.13%2C0.35%2C2.46-0.41%2C3.44C80.06%2C96.83%2C73.37%2C102.35%2C64%2C102.35z%20M54.05%2C81.56c-3%2C3.88-17.71%2C3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38%2C28.85%2C6.36S57.72%2C77.92%2C54.05%2C81.56z%20M80.08%2C52.58c9.66-9.7%2C25.52-9.62%2C28.85-6.33s3.53%2C19.11-6.13%2C28.8S77.64%2C85%2C73.94%2C81.38S70.42%2C62.28%2C80.08%2C52.58z'/%3E%3Crect%20x='143'%20y='36'%20width='30'%20height='58'%20fill='%234f9a60'/%3E%3C/svg%3E") 4 4, auto;
+
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* ── accent themes ──────────────────────────────────
+   theme.js stamps data-theme on <html> before first paint and the swatches
+   in the tmux bar switch it. Phosphor above is the default and needs no
+   block — theme.js removes the attribute entirely for it.
+   Every theme must define the FULL set — a partial block inherits
+   phosphor's greens and looks muddy against a different background.
+   Note: favicon.svg can't follow the toggle (it loads outside the cascade),
+   so the tab mark stays the default green whichever theme is picked. */
+
+/* amber — warm dark. Keeps the green "$" glyph, the inverse of phosphor. */
+:root[data-theme="amber"] {
+  --bg: #080706;
+  --text: #d3cabd;
+  --text-dim: #968d80;
+  --text-faint: #524b42;
+  --accent: #cf7a26;
+  --green: #4f9a60;
+  --surface: rgba(211, 202, 189, 0.12);
+  --surface-soft: rgba(211, 202, 189, 0.045);
+  --rail-bg: #13100c;
+  --grid-line: rgba(207, 122, 38, 0.05);
+  /* alien pointer — follows this theme's accent, like the wordmark does.
+     Only favicon.svg is pinned green: it loads outside the cascade. */
+  --ptr: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%20128%20128'%3E%3Cpath%20fill='%23cf7a26'%20d='M64%2C4.5C36.2%2C4.5%2C8%2C28.1%2C8%2C55.8s44.3%2C67.7%2C56.2%2C67.7c13.2%2C0%2C55.8-39.9%2C55.8-67.7S91.8%2C4.5%2C64%2C4.5z'/%3E%3Cpath%20fill='%23080706'%20d='M64%2C102.35c-9.37%2C0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74%2C1.17-1.18%2C2-1.15c0.3%2C0%2C0.6%2C0.05%2C0.88%2C0.15C53.1%2C90.8%2C57.23%2C93%2C64%2C93s10.92-2.16%2C15.63-3.63c0.28-0.1%2C0.58-0.15%2C0.88-0.15c0.83-0.03%2C1.61%2C0.41%2C2%2C1.15c0.51%2C1.13%2C0.35%2C2.46-0.41%2C3.44C80.06%2C96.83%2C73.37%2C102.35%2C64%2C102.35z%20M54.05%2C81.56c-3%2C3.88-17.71%2C3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38%2C28.85%2C6.36S57.72%2C77.92%2C54.05%2C81.56z%20M80.08%2C52.58c9.66-9.7%2C25.52-9.62%2C28.85-6.33s3.53%2C19.11-6.13%2C28.8S77.64%2C85%2C73.94%2C81.38S70.42%2C62.28%2C80.08%2C52.58z'/%3E%3C/svg%3E") 4 4, auto;
+  --ptr-link: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='28'%20viewBox='0%200%20183%20128'%3E%3Cpath%20fill='%23cf7a26'%20d='M64%2C4.5C36.2%2C4.5%2C8%2C28.1%2C8%2C55.8s44.3%2C67.7%2C56.2%2C67.7c13.2%2C0%2C55.8-39.9%2C55.8-67.7S91.8%2C4.5%2C64%2C4.5z'/%3E%3Cpath%20fill='%23080706'%20d='M64%2C102.35c-9.37%2C0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74%2C1.17-1.18%2C2-1.15c0.3%2C0%2C0.6%2C0.05%2C0.88%2C0.15C53.1%2C90.8%2C57.23%2C93%2C64%2C93s10.92-2.16%2C15.63-3.63c0.28-0.1%2C0.58-0.15%2C0.88-0.15c0.83-0.03%2C1.61%2C0.41%2C2%2C1.15c0.51%2C1.13%2C0.35%2C2.46-0.41%2C3.44C80.06%2C96.83%2C73.37%2C102.35%2C64%2C102.35z%20M54.05%2C81.56c-3%2C3.88-17.71%2C3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38%2C28.85%2C6.36S57.72%2C77.92%2C54.05%2C81.56z%20M80.08%2C52.58c9.66-9.7%2C25.52-9.62%2C28.85-6.33s3.53%2C19.11-6.13%2C28.8S77.64%2C85%2C73.94%2C81.38S70.42%2C62.28%2C80.08%2C52.58z'/%3E%3Crect%20x='143'%20y='36'%20width='30'%20height='58'%20fill='%23cf7a26'/%3E%3C/svg%3E") 4 4, auto;
+}
+
+/* classic — the site's original GitHub-blue palette, kept so the old look
+   is still reachable */
+:root[data-theme="classic"] {
+  --bg: #0a0d11;
+  --text: #bcc3cb;
+  --text-dim: #838d97;
+  --text-faint: #444b53;
+  --accent: #6191c9;
+  --green: #4f9a60;
+  --surface: rgba(188, 195, 203, 0.12);
+  --surface-soft: rgba(188, 195, 203, 0.045);
+  --rail-bg: #12161b;
+  --grid-line: rgba(97, 145, 201, 0.05);
+  /* alien pointer — follows this theme's accent, like the wordmark does.
+     Only favicon.svg is pinned green: it loads outside the cascade. */
+  --ptr: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%20128%20128'%3E%3Cpath%20fill='%236191c9'%20d='M64%2C4.5C36.2%2C4.5%2C8%2C28.1%2C8%2C55.8s44.3%2C67.7%2C56.2%2C67.7c13.2%2C0%2C55.8-39.9%2C55.8-67.7S91.8%2C4.5%2C64%2C4.5z'/%3E%3Cpath%20fill='%230a0d11'%20d='M64%2C102.35c-9.37%2C0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74%2C1.17-1.18%2C2-1.15c0.3%2C0%2C0.6%2C0.05%2C0.88%2C0.15C53.1%2C90.8%2C57.23%2C93%2C64%2C93s10.92-2.16%2C15.63-3.63c0.28-0.1%2C0.58-0.15%2C0.88-0.15c0.83-0.03%2C1.61%2C0.41%2C2%2C1.15c0.51%2C1.13%2C0.35%2C2.46-0.41%2C3.44C80.06%2C96.83%2C73.37%2C102.35%2C64%2C102.35z%20M54.05%2C81.56c-3%2C3.88-17.71%2C3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38%2C28.85%2C6.36S57.72%2C77.92%2C54.05%2C81.56z%20M80.08%2C52.58c9.66-9.7%2C25.52-9.62%2C28.85-6.33s3.53%2C19.11-6.13%2C28.8S77.64%2C85%2C73.94%2C81.38S70.42%2C62.28%2C80.08%2C52.58z'/%3E%3C/svg%3E") 4 4, auto;
+  --ptr-link: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='28'%20viewBox='0%200%20183%20128'%3E%3Cpath%20fill='%236191c9'%20d='M64%2C4.5C36.2%2C4.5%2C8%2C28.1%2C8%2C55.8s44.3%2C67.7%2C56.2%2C67.7c13.2%2C0%2C55.8-39.9%2C55.8-67.7S91.8%2C4.5%2C64%2C4.5z'/%3E%3Cpath%20fill='%230a0d11'%20d='M64%2C102.35c-9.37%2C0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74%2C1.17-1.18%2C2-1.15c0.3%2C0%2C0.6%2C0.05%2C0.88%2C0.15C53.1%2C90.8%2C57.23%2C93%2C64%2C93s10.92-2.16%2C15.63-3.63c0.28-0.1%2C0.58-0.15%2C0.88-0.15c0.83-0.03%2C1.61%2C0.41%2C2%2C1.15c0.51%2C1.13%2C0.35%2C2.46-0.41%2C3.44C80.06%2C96.83%2C73.37%2C102.35%2C64%2C102.35z%20M54.05%2C81.56c-3%2C3.88-17.71%2C3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38%2C28.85%2C6.36S57.72%2C77.92%2C54.05%2C81.56z%20M80.08%2C52.58c9.66-9.7%2C25.52-9.62%2C28.85-6.33s3.53%2C19.11-6.13%2C28.8S77.64%2C85%2C73.94%2C81.38S70.42%2C62.28%2C80.08%2C52.58z'/%3E%3Crect%20x='143'%20y='36'%20width='30'%20height='58'%20fill='%236191c9'/%3E%3C/svg%3E") 4 4, auto;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,6 +104,29 @@ body {
   font-size: 14px;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── alien pointer ──────────────────────────────────
+   The site's own mark replaces the arrow, and gains a block cursor beside
+   it over anything clickable — that block is the only affordance left once
+   the native pointer/hand cursors are gone, so don't drop it. It's the same
+   block-cursor motif the project rows use on hover.
+   A drawn saucer was tried first and rejected by the owner ("not looks so
+   good"): it competed with the alien instead of reinforcing it.
+   Paths come from favicon.svg, minus its highlight stroke — that path is
+   invisible at 28px and only made the data URI longer.
+   Only on fine pointers: touch has no cursor, and a coarse pointer with a
+   28px sprite is a hit-target problem, not a decoration.
+   The I-beam is deliberately preserved over prose and code — posts are for
+   reading, and losing the text cursor there costs more than the joke is
+   worth. `auto` is the fallback in every value, so if a browser rejects the
+   data URI you get a normal pointer rather than none. */
+@media (hover: hover) and (pointer: fine) {
+  body { cursor: var(--ptr); }
+  a, button, summary, label, [role="button"] { cursor: var(--ptr-link); }
+  p, li, pre, code, h1, h2, h3, blockquote, td, th { cursor: text; }
+  /* …but a link wrapping prose is still a link */
+  a p, a li, a code, a h1, a h2, a h3 { cursor: var(--ptr-link); }
 }
 
 /* ── terminal print entrance ────────────────────── */
@@ -150,6 +241,47 @@ header h1 .alien {
 .man-body .cmdline { margin-top: 0; }
 .man-body .cmdline + .cmdline { margin-top: 0.3rem; }
 
+/* Section hover — the same pixel vocabulary as the project rows, applied to
+   a man page: the body takes an accent wash and its heading takes a block
+   cursor. A "section" is a .man-sec plus the .man-body right after it, so
+   hovering either lights both; :has() is what pairs them without wrapping
+   the markup in another div. Browsers without :has() just don't light the
+   heading from the body — no layout consequence.
+   The cursor is width:0 at rest (not display:none) so nothing reflows when
+   it steps in. */
+@media (hover: hover) and (pointer: fine) {
+  .man-sec { transition: color 160ms var(--ease-out); }
+  .man-sec::before {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 0.85em;
+    background: var(--accent);
+    vertical-align: -0.08em;
+    transition: width 140ms steps(3), margin-right 140ms steps(3);
+  }
+  .man-sec:hover,
+  .man-sec:has(+ .man-body:hover) { color: var(--accent); }
+  .man-sec:hover::before,
+  .man-sec:has(+ .man-body:hover)::before { width: 0.5em; margin-right: 0.3em; }
+
+  .man-body { position: relative; isolation: isolate; }
+  .man-body::before {
+    content: "";
+    position: absolute;
+    inset: -2px -8px;
+    z-index: -1;
+    background-image: repeating-conic-gradient(var(--accent) 0% 25%, transparent 0% 50%);
+    background-size: 6px 6px;
+    opacity: 0;
+    transition: opacity 160ms steps(3);
+  }
+  /* lighter than the project rows' 0.17: a man-body is a full paragraph,
+     and the same density behind four lines of prose swamps the text */
+  .man-body:hover::before,
+  .man-sec:hover + .man-body::before { opacity: 0.11; }
+}
+
 /* ── footer ─────────────────────────────────────── */
 footer {
   margin-top: 2.5rem;
@@ -185,7 +317,7 @@ footer a {
   /* max() keeps the ends clear of notch corners in landscape */
   padding: 0 max(1rem, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(1rem, env(safe-area-inset-left, 0px));
   font-size: 12px;
-  background: #161b22;
+  background: var(--rail-bg);
   opacity: 0;
   animation: fadeIn 500ms var(--ease-out) 1300ms both;
 }
@@ -207,6 +339,44 @@ footer a {
 .rail a:hover { opacity: 1; color: var(--text); }
 .rail a.active { color: var(--accent); opacity: 1; }
 .rail a.active::after { opacity: 1; }
+
+/* ── accent swatches: tmux right-status, injected by theme.js ──
+   Three blocks in the bar's right end. margin-left:auto parks them there;
+   the margin-right clears the fixed © sticker, which hides ≤640px so the
+   reserve is dropped with it (the bar's width budget is tight — see the
+   ≤440px note below). */
+.swatches {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 5px;
+  margin-left: auto;
+  margin-right: 100px;
+}
+.swatches button {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  padding: 6px 1px;          /* pads the tap target without widening the bar */
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.swatches button i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  background: var(--sw);
+  opacity: 0.45;
+  transition: opacity 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+.swatches button:hover i { opacity: 0.8; }
+.swatches button[aria-pressed="true"] i {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--rail-bg), 0 0 0 3px var(--sw);
+}
 
 /* fixed © sticker — lives in the status bar's right corner,
    like tmux's right-status */
@@ -241,6 +411,7 @@ footer a {
   .rail { gap: 0.8em; font-size: 11px; padding-left: 0.7rem; padding-right: 0.7rem; }
   .rail .sess { display: none; }
   .site-foot { display: none; }
+  .swatches { margin-right: 0; }   /* © is gone — reclaim its reserve */
 }
 @media (max-width: 540px) {
   html { font-size: 13.5px; }

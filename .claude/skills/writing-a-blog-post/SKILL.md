@@ -47,17 +47,26 @@ labelled as a draft, and deleted unread for exactly this reason.
 1. `cp blog/_template.html blog/<slug>.html` and fill it in (the template's
    top comment lists every placeholder).
 2. Add one `<li>` to the `#blog` screen in `index.html`, **newest first**,
-   then push the two wip lines' `--i` up by one so the print order stays
-   sequential.
+   then push the `--i` of every entry below it up by one so the print order
+   stays sequential. (There is no longer a wip line under the list — it was
+   removed in July 2026; don't re-add a "coming soon" placeholder.)
 
 ```html
 <li class="in" style="--i:N">
   <a href="blog/<slug>.html">
     <span class="name"><slug></span>
-    <p class="desc">one dry line</p>
+    <p class="desc">one dry line<span
+      class="meta">YYYY-MM-DD <span class="sep">·</span> N min</span></p>
   </a>
 </li>
 ```
+
+The listing's `.meta` is the `ls -l` column: date + read-time, faint, under
+the description. **It duplicates the post's own `written … · N min` line**
+— two hand-kept copies, so set both in the same pass or the deck will
+advertise a read length the post contradicts. The `.meta` lives *inside*
+`.desc` on purpose: `.projects a` is a two-item flex row, and a third child
+would become a third column.
 
 Slugs: lowercase, hyphenated, **≤23 characters** — longer ones wrap the
 name column. The slug is the filename, the list label, and the path in the
@@ -110,15 +119,15 @@ Fixed scaffold, in order. Don't restructure it:
 
 ```
 header (wordmark, links back to ../index.html#blog)   --i:0
-$ less ~/blog/<slug>.md                               --i:1
+$ less ~/blogs/<slug>.md                               --i:1
 # post title                                          --i:2
 written YYYY-MM-DD · N min                            --i:3
 $ git clone github.com/MKS-01/<repo>                  --i:4
 [optional hero <figure>]                              --i:5
 .post  ← the whole body, ONE fade                     --i:6
 (END)                                                 --i:7
-$ cd ~/blog                                           --i:8
-tmux bar: [mks] 0:home 4:blog*
+$ cd ~/blogs                                          --i:8
+tmux bar: [mks] 0:whoami 1:blogs*
 ```
 
 Numbers shift if you drop the hero — keep the sequence contiguous, and
@@ -127,7 +136,7 @@ everything after it.
 
 - The `less` framing is deliberate: `cat` is the landing's verb for short
   output, `man` belongs to projects, `less` is the pager you'd actually use
-  on long text. Open with `$ less`, close with `(END)` + `$ cd ~/blog`.
+  on long text. Open with `$ less`, close with `(END)` + `$ cd ~/blogs`.
 - **The body fades in as one block.** `--i` is for terminal output printing
   line-by-line; a 4-minute read at 55ms/line would be unusable. Never put
   `--i` on individual paragraphs.

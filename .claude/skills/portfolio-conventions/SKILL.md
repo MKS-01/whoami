@@ -56,18 +56,34 @@ separately and **had already drifted**: the landing's copy carried a
 highlight `<path>` the posts' copy lacked, so the two served visibly
 different marks. Don't re-inline it.
 
-Its hexes are hardcoded (`#58A6FF`, `#0D1117`) because a favicon loads
+Its hexes are hardcoded (`#4F9A60`, `#070807` — the *default* theme's
+accent and bg) because a favicon loads
 outside the page's cascade and can't see `var(--accent)`. If a token
 changes, update the literals in `favicon.svg` too — the comment in that
 file says so.
 
-**The header wordmark alien is the one copy that must stay inline** — it
-fills from `var(--accent)`/`var(--bg)`, so it has to live in the page's
-cascade; an `<img>` or a cross-document `<use>` can't see those. It had
-drifted the same way (landing had 3 paths, every post had 2 — missing the
-highlight stroke); all four are now identical **3-path** markup. When you
-touch the alien, `grep -c '<path' ` across `index.html` and `blog/*.html`
-and confirm they still match.
+**Only `favicon.svg` is pinned green.** The wordmark alien and the pointer
+both follow `var(--accent)`, so they change with the theme (owner, July
+2026: "alien on whoami section keep updating as per theme"). The tab icon
+can't follow — it loads outside the cascade — so it hardcodes the default
+theme's green and stays green in all three. That asymmetry is intentional;
+don't "fix" it by pinning the wordmark too.
+
+**If the tab icon looks like the OLD colour, it's cache, not code.**
+Browsers cache favicons aggressively and ignore a normal reload. The icon
+links carry a `?v=N` query for exactly this reason — bump N whenever
+`favicon.svg` changes colour, in `index.html` **and** every `blog/*.html`
+(including `_template.html`), or the change won't reach anyone who has
+already visited.
+
+**The header wordmark alien must stay inline** — it fills from
+`var(--accent)`/`var(--bg)`, so it has to live in the page's cascade; an
+`<img>` or a cross-document `<use>` can't see those. It had drifted before
+(landing had 3 paths, every post had 2 — missing the highlight stroke); all
+copies are now identical 3-path markup. When you touch the alien,
+`grep -c '<path' ` across `index.html` and `blog/*.html` and confirm they
+still match. Hero graphics inside posts also use `var(--accent)` — they're
+illustrations, not the mark, and should follow the theme.
 
 ## Blog
 
@@ -75,29 +91,49 @@ and confirm they still match.
 it covers the post format, prose markup, read-time and the publish step.
 What follows is only how the blog wires into the deck.
 
-- Post list is a deck screen (`#blog`, `$ ls ~/blog`), reusing the exact
-  `.projects` two-column shape as `ls ~/weekend-hacks`; `4:blog` is the
-  fifth and last tmux window. Chosen over a separate `/blog/` index page —
-  with the owner's ~10-post cap, an extra navigation hop buys nothing.
-- **The wip line lives on the blog screen**, under a second
-  `$ ls ~/weekend-hacks/wip` prompt (owner's call, July 2026: "combine
-  blog"). It is no longer its own screen or window, and `app-wip`'s
-  git-init animation was deleted with it — one screen shows one mac app,
-  and that slot belongs to `app-blog`. Because that screen now runs two
-  prompts, the "first prompt has no top margin" rule is scoped to
-  `.detail-screen .content > .prompt:first-child`; don't loosen it back to
-  `.detail-screen .prompt` or the second command will collide with the list
-  above it.
+- Post list is a deck screen (`#blog`, `$ ls ~/blogs`), reusing the exact
+  `.projects` two-column shape as `ls ~/weekend-hacks`. Chosen over a
+  separate `/blog/` index page — with the owner's ~10-post cap, an extra
+  navigation hop buys nothing.
+- **The deck is exactly three screens: `home → blog → projects`** (owner's
+  cap, July 2026: "landing page not exceed more than 3 scrolls"). Blog
+  comes before the projects because writing should precede the deep-dives.
+  Three things must agree or the nav silently lies: DOM order of `.screen`,
+  the order of `.rail` links (the observer maps them by index, not by
+  href), and the window numbers in the labels. Posts' own two-window bar
+  hardcodes `1:blogs` — renumber `blog/*.html` **and** `_template.html`
+  with it.
+- **The wip line is gone** (owner's call, July 2026). `$ ls
+  ~/weekend-hacks/wip` and its "still a few unfinished weekend projects —
+  updating soon" line were briefly folded onto the blog screen after
+  `app-wip` was deleted; the owner then asked for the line removed
+  outright. Don't reinstate a "coming soon" placeholder — an empty promise
+  is worse than no line, and the blog screen is now one clean `$ ls ~/blogs`.
+  The "first prompt has no top margin" rule is still scoped to
+  `.detail-screen .content > .prompt:first-child` (+ the `.dither +` arm);
+  keep it scoped rather than loosening to `.detail-screen .prompt`, so a
+  screen that grows a second command later still reads right.
 - **`mobile-recon` has no detail screen** (removed July 2026, same pass). It
   stays in the home `ls ~/weekend-hacks` list but links straight to the
   GitHub repo instead of an `#anchor`. `app-recon` was deleted as dead code.
   A project appearing on the landing does NOT imply it has a screen.
-- Posts open with `$ less ~/blog/<slug>.md` and close with `(END)` +
-  `$ cd ~/blog`. `less` was picked over `cat` (which the landing uses for
+- **Window labels are display text, ids are not.** `0:whoami` (the landing,
+  named for its first command — owner's call, July 2026) still points at
+  `#home`; the label and the anchor are allowed to differ, and the same
+  goes for the `blogs` labels below.
+- **The visible label is `blogs`, the directory is still `blog/`** (owner,
+  July 2026). `$ ls ~/blogs`, `$ less ~/blogs/<slug>.md`, `$ cd ~/blogs`
+  and the `1:blogs` window are all display text; the folder, the `href`s
+  and the `#blog` anchor id were deliberately left alone because renaming
+  the folder changes live GitHub Pages URLs and breaks any shared post
+  link. The conceit was already fictional (`.md` on disk is `.html`), so a
+  displayed path that doesn't match the repo path is consistent with it.
+- Posts open with `$ less ~/blogs/<slug>.md` and close with `(END)` +
+  `$ cd ~/blogs`. `less` was picked over `cat` (which the landing uses for
   short output) and over `man` (reserved for projects) because it's the
   pager you'd actually use on long text and it signals "this one scrolls."
 - Post pages carry **no mac** and no snap — just the wordmark linking back to
-  `../index.html#blog`, and a two-window tmux bar (`0:home`, `6:blog`).
+  `../index.html#blog`, and a two-window tmux bar (`0:whoami`, `1:blogs`).
 - Post bodies fade in as **one block** (`.post.in`), not line-by-line. The
   `--i` print sequence is for terminal output; a 4-minute read printing
   55ms per line would be unusable. Only the header/prompt/title/meta use it.
@@ -111,14 +147,53 @@ What follows is only how the blog wires into the deck.
 ## Design tokens (`:root`, defined in `style.css`)
 
 ```
---bg: #0d1117        page background
---text: #c9d1d9       primary text (bold lines, links' hover)
---text-dim: #8b949e   secondary text (most body copy)
---text-faint: #484f58 separators (·, →), faint icons
---accent: #58a6ff     links, project names, leet tokens
---green: #3fb950      the "$ " prompt glyph — ONLY use for prompts
+--bg: #070807         page background
+--text: #ccd3ca       primary text (bold lines, links' hover)
+--text-dim: #8a9588   secondary text (most body copy)
+--text-faint: #474f46 separators (·, →), faint icons
+--accent: #4f9a60     links, project names, leet tokens
+--green: #cf7a26      the "$ " prompt glyph — ONLY use for prompts
+--surface / --surface-soft   inert fills: bars, code blocks, mac gauges
+--rail-bg             the tmux bar's background
+--grid-line           the deck's ambient pixel field
 --ease-out: cubic-bezier(0.23, 1, 0.32, 1)   strong ease-out, used everywhere
 ```
+
+**Matte finish — every theme (owner, July 2026: "all colour looks too
+bright and I'm the dark mode person").** True-black backgrounds, text off
+pure white, and accents *desaturated*, not merely darkened — a lit surface
+rather than a glowing one. Surface fills, the ambient grid and the dither
+tints were all brought down with them. Measured floors to hold if you
+retune: body text ≥ 10:1, `--text-dim` ≥ 5.5:1, accent ≥ 5.5:1 against the
+theme's own `--bg`; `--text-faint` sits at ~2.3:1 on purpose — it is a
+separator, not text. Don't reintroduce a fully saturated accent.
+
+**`--green` is a role, not a colour.** It means "the shell's own glyph", so
+in the default green theme it holds amber — the accent had taken green and
+the prompt has to stay distinct from the links. Never read `--green` as
+"the colour green"; use `--accent` for anything that isn't a `$`.
+
+### Accent toggle (July 2026, replaced the fixed blue palette)
+
+Three themes, switched by swatches in the tmux bar: **phosphor** (green,
+the default), **amber** (warm), **classic** (the original GitHub blue —
+kept so the old look is still reachable). The owner asked for a mistral-ish
+modern pass, chose the warm repaint, then chose green as the default and
+asked for a toggle rather than a swap — don't quietly drop a theme.
+
+- `theme.js` (repo root) is the single source: loaded **non-deferred in
+  `<head>`** so it stamps `data-theme` before first paint, and it *injects*
+  the swatch markup into `.rail` rather than having it pasted into
+  `index.html` plus every post. Preference persists in `localStorage`
+  under `mks-accent`.
+- The default theme gets **no `data-theme` attribute at all** — bare
+  `:root` styles it. `DEFAULT` in `theme.js` and the bare `:root` block in
+  `style.css` must name the same theme.
+- Every theme block defines the **full** token set. A partial block
+  inherits the default's greens and looks muddy on another background.
+- `favicon.svg` can't follow the toggle (it loads outside the cascade), so
+  it hardcodes the **default** theme's accent/bg. Change the default and
+  you must repaint that file's two literals.
 
 Font: Fira Code, 14px, line-height 1.7. Don't introduce a second font or
 break monospace anywhere — the terminal conceit depends on it.
@@ -126,8 +201,9 @@ break monospace anywhere — the terminal conceit depends on it.
 ## Layout rules
 
 - The page is a **scroll-snap deck** (`scroll-snap-type: y mandatory` on
-  `html`): screen 1 is the landing (`#home`), then one full-viewport
-  `.screen.detail-screen.reveal` per project. Each `.screen` is
+  `html`): the landing (`#home`), the blog index (`#blog`), and `#projects`
+  — which holds every project man page on one horizontal track rather than
+  a screen each (see "Projects track" below). Each `.screen` is
   `min-height: 100dvh` flex-centered with `padding: 3rem 1.5rem`; inner
   wrapper `.inner` is `max-width: 720px` (940px on home + detail screens,
   whose text column `.content` caps at 500px so it clears the fixed mac).
@@ -147,6 +223,128 @@ break monospace anywhere — the terminal conceit depends on it.
 - Footer is **left-aligned**, not centered — it's a continuation of the
   terminal stream, not a separate "site footer" block. Centering it was tried
   and rejected for looking "separate."
+
+## Projects track (July 2026 — replaced one screen per project)
+
+`readback`, `pizow` and `mac-mlx-cluster` used to be a snap screen each.
+They are now three `.card`s on one horizontal track inside `#projects`, so
+the deck fits the owner's 3-scroll cap. The man-page markup inside each
+card is unchanged.
+
+- `.mantrack` is `overflow-x: auto` + `scroll-snap-type: x mandatory`;
+  cards are `flex: 0 0 100%`. Nesting x-snap inside the deck's y-snap is
+  fine — different axes — but keep the two declarations separate.
+- **Do not call anything `.track`.** That class is already the readback mac
+  app's now-playing line (`white-space: nowrap; overflow: hidden`). The
+  carousel was briefly called `.track` and silently inherited both, so the
+  man text stopped wrapping *and* the mac's demo line took the carousel's
+  flex/overflow rules. Hence `.mantrack`.
+- **Auto-advance, 7s a card, and it must never move text someone is
+  reading.** Hover, focus, touch or a manual scroll holds it; it resumes
+  10s after the last interaction; `prefers-reduced-motion` disables auto
+  entirely and leaves the track swipeable. It only runs while `#projects`
+  is the screen in view.
+- Two *separate* state classes on `.tbar`: `.running` (auto is on at all —
+  adds the countdown fill) and `.paused` (someone is engaged — freezes it).
+  Folding them into one made a hover *remove* the countdown so the bar
+  jumped to full, reading as "finished" instead of "paused".
+- The indicator is three blocks + `1/3`. The active block's fill doubles as
+  the countdown to the next advance, which is why no explanatory copy is
+  needed next to it.
+- `#projects` has **no mac app of its own** — the observer sets
+  `mac.dataset.app` to the *live card's* id. Anything that assumes
+  `data-app === screen.id` breaks here.
+- The landing's `ls ~/weekend-hacks` links (`#readback` etc.) now point at
+  cards, not screens. The nav resolves a card hash to its screen and slides
+  the track to it; keep that path if you touch the anchor JS.
+- **`#projects` is the one screen where the mac sits LEFT** and the text
+  reads right (`.mac.flip`, `#projects .inner { justify-content: flex-end }`,
+  ≥1021px only). The flip is a `translateX(-580px)` — the exact mirror of
+  `left: calc(50% + 90px)` for a 400px-wide mac — so it animates on the
+  compositor instead of relaying out a fixed element.
+
+## Alien pointer (July 2026)
+
+The native arrow is replaced by **the site's own alien mark**, and anything
+clickable gets the mark plus a block cursor beside it — that block is the
+only affordance left once the arrow/hand cursors are gone, so never drop
+it. It reuses the block-cursor motif the project rows already use on hover.
+
+**A drawn UFO/saucer was built first and rejected** (owner: "not looks so
+good") — it competed with the alien instead of reinforcing it. The site has
+one mark; the pointer should be that mark, not a second alien-adjacent
+icon. Don't re-propose a saucer, a rocket, or any other new glyph here.
+
+- Paths are lifted from `favicon.svg`, **minus its highlight stroke** —
+  that path is invisible at 28px and only lengthened the data URI.
+- One sprite per theme, in `--ptr` / `--ptr-link`. A cursor image is a data
+  URI outside the cascade, so it cannot read a custom property; the hexes
+  are baked into each copy. Same duplication class as `favicon.svg` —
+  retune the palette and these must be regenerated with it.
+- The sprite follows the theme: alien in `--accent`, cut-outs in `--bg`,
+  block cursor in `--accent`. Only the favicon is pinned green.
+- Wrapped in `@media (hover: hover) and (pointer: fine)`. Touch has no
+  cursor, and a 28px sprite on a coarse pointer is a hit-target problem.
+- **The I-beam is kept over prose and code** (`p, li, pre, code, h…`).
+  Posts are for reading; losing the text cursor across a 4-minute read
+  costs more than the joke is worth. Links wrapping prose re-assert the
+  pointer.
+- Every value ends in `, auto`, so a browser that rejects the data URI
+  falls back to a normal pointer rather than none.
+- Hotspot is `4 4`, on the head's upper-left edge.
+
+## Pixel-dither vocabulary (July 2026)
+
+The owner asked for "a modern touch and animation, similar to mistral.ai".
+What was taken from that site is its **pixel/dither motif**, translated into
+the terminal — not its sans typography or card layouts. One vocabulary,
+three uses, all `steps()`-timed so motion reads as cells dropping out rather
+than as a soft crossfade:
+
+- **Screen reveal** — `<span class="dither"><i><i><i></span>`, the first
+  child of every `.content`. Three stacked checkerboards (solid → 18px →
+  9px accent-tinted) fade out on staggered delays, ~520ms total, over the
+  `.in` print running underneath. Gated by `.reveal.on` exactly like `.in`,
+  and unpaused in the `<noscript>` block — miss either and below-the-fold
+  screens stay black.
+- **Project row hover** — an accent checkerboard wash behind the row
+  (`opacity: .17`) plus a block cursor stepping in ahead of `.name`. This
+  **replaced the hover underline** on project rows; the underline stays on
+  `.cmdline`/footer links.
+- **Description hover** — the `<b>` fragment gets an accent block-underline
+  that wipes across in `steps(6)`. A full block *highlight* was tried and
+  rejected: mid-sweep it puts light text on solid accent and contrast dies.
+- **Mac app swap** — `.mac .mdither`, the same wipe one screen down. The
+  apps used to plain-crossfade, the last soft transition on the page; now
+  the swap happens behind block cells that coarsen away over ~420ms.
+  Finer cells than the page reveal (12px/6px vs 18px/9px) because the lid
+  is only 360px wide and the page's grid reads as three big squares at
+  that size. **This is not lid motion** — the lid stays hardcoded open;
+  don't let it become an excuse to reopen that rejected idea.
+  Every app change goes through one `setApp(id)` in the script, which skips
+  the wipe when the app hasn't actually changed (the observer re-fires on
+  every crossing) and on the first set, which is page load. If you add a
+  second place that writes `mac.dataset.app`, route it through `setApp`.
+- **Ambient field** — `body::before`, a `--grid-line` grid masked to a soft
+  centre, panning one 32px cell per 40s. Deck only. It needs `z-index: -1`;
+  at `0` a fixed positioned layer paints *above* in-flow text.
+
+Two gotchas worth keeping:
+
+- The dither span is `.content`'s real first child, so
+  `.content > .prompt:first-child` stopped matching on detail screens and
+  the first `$` command grew a 2.5rem top margin. The rule now carries a
+  `.dither + .prompt` arm. Still don't loosen it to `.detail-screen
+  .prompt` — the blog screen's second command needs its margin.
+- `color-mix()` in the tinted pass degrades to "no layer" on pre-2023
+  browsers, which costs the sparkle but still completes the reveal. Fine.
+
+The scroll hint follows the same "purposeful" rule: it was `--text-faint`
+at 0.8rem and vanished into the background — now `--text-dim` at 0.85rem
+with only the `#` faint, and its `↓` is accent-coloured and travels
+downward on a loop instead of bobbing in place. It bottoms out at
+`opacity: .18` rather than 0 and resets on that dim frame: the arrow sits
+mid-sentence, and a glyph that fully disappears reads as a glitch.
 
 ## Entrance animation ("terminal print")
 
@@ -247,7 +445,7 @@ proposing alternatives):
   must never be user-visible.
 - **Section nav is a tmux status bar** (`nav.rail`, restyled July 2026):
   thin bar pinned to the bottom edge, `[mks]` session name in green, each
-  screen a numbered window (`0:home* 1:readback …`), active one accent +
+  screen a numbered window (`0:whoami* 1:blogs 2:projects.1`), active one accent +
   starred (star width is pre-reserved so the bar never shifts). Driven by
   the same observer. `© year mks` (`.site-foot`) lives in its right corner
   like tmux right-status; session name + © hide ≤640px, tighter gap/font

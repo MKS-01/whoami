@@ -14,6 +14,8 @@ style.css                 shared by BOTH kinds of page: tokens, terminal
                           grammar ($ prompts, man-page, cmdline), footer,
                           tmux bar
 favicon.svg               the alien mark, one file, linked by every page
+theme.js                  accent toggle: sets data-theme pre-paint, injects
+                          the tmux-bar swatches. Linked by BOTH page kinds
 index.html                the scroll-snap deck. Inline <style> holds ONLY
                           deck-specific CSS (.screen + snap, .mac + .app-*,
                           .projects, .hint) + one inline <script>
@@ -44,12 +46,28 @@ shared sheet would break long-form scrolling on every post at once.
 
 **Adding a post** (cap ~10, owner's rule): `cp blog/_template.html
 blog/<slug>.html`, fill it in, then paste one `<li>` into the `#blog` screen
-in `index.html` (the markup comment there has the snippet) and bump the two
-wip lines' `--i`. Keep slugs ≤23 chars or they wrap the name column.
+in `index.html` (the markup comment there has the snippet), bumping the `--i`
+of the entries below it. Keep slugs ≤23 chars or they wrap the name column.
 
-Five screens: `home`, `readback`, `pizow`, `mac-mlx-cluster`, `blog`. The
-blog screen also carries the wip line. `mobile-recon` is listed on the
-landing but has no screen — it links straight to its repo.
+Three screens — `home`, `blog`, `projects` — and that cap is the owner's
+("landing page not exceed more than 3 scrolls", July 2026). The three
+project man pages live on a horizontal auto-advancing track inside
+`#projects`, one `.card` each, instead of a screen apiece; the tmux bar
+shows which card as a pane suffix (`2:projects.2`). `mobile-recon` is listed
+on the landing but has no card — it links straight to its repo. Screen DOM order, the `.rail` link
+order and the `N:name` window numbers must all agree — the observer maps
+rail links by index, so a mismatch highlights the wrong tab.
+
+`#projects` is also the one screen that mirrors the layout: mac left, text
+right. See the `portfolio-conventions` skill before touching the track —
+notably, never name anything `.track` (it collides with the mac's
+now-playing line).
+
+`theme.js` at the root is the accent toggle (phosphor/amber/classic,
+phosphor default): it stamps `data-theme` before first paint and injects
+the swatches into the tmux bar on every page. Themes are token blocks in
+`style.css`; `favicon.svg` hardcodes the **default** theme's two hexes
+because it loads outside the cascade.
 
 ## Read the skill first
 
