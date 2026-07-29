@@ -536,6 +536,29 @@ proposing alternatives):
   mac (`scale(0.5)`, docked closer, pad 160) — the common iPhone state;
   **<660px** hidden (pad 3rem) for tiny/landscape only. Verify overlap by
   probing `.content` bottom vs `.mac` top at 573/660/673/760/790/853px.
+- **`.screen` and `.detail-screen` have EQUAL specificity — source order
+  decides.** Both are single class selectors, so a later
+  `.screen { padding-bottom: … }` silently wipes out the mac-clearance tiers
+  above it and the docked mac draws over the man pages. This has bitten
+  twice: the `max-width: 540px` shorthand (fixed at the time, with a
+  comment) and the `max-height: 840px` short-viewport block, which shipped
+  broken and was caught July 2026. Measured at a 673px viewport, the padding
+  collapsed to `2rem` — **27px**, because `style.css` drops the root font to
+  13.5px at ≤640px — and `#projects` overlapped the mac by 17px. Scoping it
+  to `.screen:not(.detail-screen)` restored +49px clearance. Before adding
+  any `.screen` padding rule, check what it lands on top of.
+- **Measuring mac overlap: use the content's offset *within its own screen*,
+  not its viewport rect.** Only `#home` is in view in a static render, so
+  the other screens sit a viewport or two down. `content.bottom −
+  screen.top` equals the viewport position once that screen is snapped to
+  the top; compare that to the fixed mac's `top`. Computing
+  `(screenH + contentH) / 2` is **wrong** — content is centred in the
+  *padding box*, so asymmetric padding shifts it and you will report
+  overlaps that aren't real. Two more traps: the `.mac` is a child of
+  `#home`, so a test copy that hides `#home` deletes the thing being
+  measured; and `data-app="home"` renders it at `opacity: 0`, so a static
+  render reports it invisible on every screen — read the geometry, not the
+  opacity.
 - **Modern mobile viewport handling** (added July 2026): `<meta
   viewport-fit=cover>` is REQUIRED — without it iOS reports every
   `env(safe-area-inset-*)` as 0 and all the safe-area padding silently

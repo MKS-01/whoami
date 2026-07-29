@@ -737,7 +737,16 @@
      bottom edge (or falls below the fold). Tighten the rhythm as the
      viewport shrinks — tall screens keep the roomy 2.5rem spacing. */
   @media (max-height: 840px) {
-    .screen { padding-top: 2rem; padding-bottom: 2rem; }
+    .screen { padding-top: 2rem; }
+    /* ⚠ padding-bottom is deliberately NOT set on .detail-screen here.
+       The mac-clearance tiers above (240/220/160px) are `.detail-screen`,
+       a single class — same specificity as `.screen` — so a
+       `.screen { padding-bottom }` this far down the file silently wins and
+       the docked mac draws over the man pages. Measured before this was
+       scoped: at a 673px viewport the padding collapsed to 2rem (27px, on
+       the 13.5px root font) and #projects overlapped the mac by 17px.
+       Same trap the `max-width: 540px` block above already documents. */
+    .screen:not(.detail-screen) { padding-bottom: 2rem; }
     .prompt, footer, .hint { margin-top: 1.7rem; }
     .output { margin-top: 0.6rem; }
     .projects a { padding: 0.25rem 0; }
