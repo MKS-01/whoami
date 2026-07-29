@@ -52,21 +52,26 @@ shared sheet would break long-form scrolling on every post at once.
 **Adding a post** (cap ~10, owner's rule): `cp blog/_template.html
 blog/<slug>.html`, fill it in, then paste one `<li>` into the `#blog` screen
 in `index.html` (the markup comment there has the snippet), bumping the `--i`
-of the entries below it. Keep slugs ≤23 chars or they wrap the name column.
+of the entries below it. The list is **paged three per `.bpage`**, so
+re-balance the pages after inserting and update `.segs`/`.tcount` if a new
+page opens. Keep slugs ≤23 chars or they wrap the name column.
 
 Three screens — `home`, `blog`, `projects` — and that cap is the owner's
-("landing page not exceed more than 3 scrolls", July 2026). The three
-project man pages live on a horizontal auto-advancing track inside
-`#projects`, one `.card` each, instead of a screen apiece; the tmux bar
-shows which card as a pane suffix (`2:projects.2`). `mobile-recon` is listed
+("landing page not exceed more than 3 scrolls", July 2026). **Two of them
+page sideways** rather than growing past the cap: the three project man
+pages are one `.card` each on a track inside `#projects`, and the post list
+is three-per-page on a track inside `#blog`. One `makeTrack()` factory
+drives both — don't fork it. The tmux bar shows the position of each as a
+pane suffix (`1:blogs.2`, `2:projects.1`). `mobile-recon` is listed
 on the landing but has no card — it links straight to its repo. Screen DOM order, the `.rail` link
 order and the `N:name` window numbers must all agree — the observer maps
 rail links by index, so a mismatch highlights the wrong tab.
 
 `#projects` is also the one screen that mirrors the layout: mac left, text
-right. See the `portfolio-conventions` skill before touching the track —
+right. See the `portfolio-conventions` skill before touching either track —
 notably, never name anything `.track` (it collides with the mac's
-now-playing line).
+now-playing line), and scope any `.tbar` lookup to its own screen now that
+there are two.
 
 `theme.js` at the root is the accent toggle (phosphor/amber/classic,
 phosphor default): it stamps `data-theme` before first paint and injects

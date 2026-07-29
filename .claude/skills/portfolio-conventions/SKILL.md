@@ -257,6 +257,42 @@ card is unchanged.
 - The landing's `ls ~/weekend-hacks` links (`#readback` etc.) now point at
   cards, not screens. The nav resolves a card hash to its screen and slides
   the track to it; keep that path if you touch the anchor JS.
+
+## Blog track (July 2026 — the same mechanism on `#blog`)
+
+The post list outgrew one snap screen when the 2020 archive posts were
+migrated in. Rather than a fourth screen (the 3-scroll cap is the owner's)
+or a nested vertical scroll (which fights the deck's y-snap on iOS), the
+list pages sideways with the *same* grammar as the projects track: owner's
+call, July 2026, "slider more section in blogs if list keep incresing
+design will not impact".
+
+- **One factory drives both tracks.** `makeTrack(id, namesApp)` in
+  `index.html`'s inline script; `tracks = { projects, blog }` is keyed by
+  the screen id each lives on. Don't fork a second copy of the auto-advance
+  logic — the pause/resume rules are subtle and were already gotten wrong
+  once (see `.running` vs `.paused` above).
+- `namesApp` is the only behavioural difference. `#projects` has no app of
+  its own so its live *card* names the mac's app; `#blog` keeps `app-blog`
+  and its track just pages the list.
+- **Scope the indicator to its own screen.** With two `.tbar`s on the page,
+  a bare `document.querySelector(".tbar")` grabs the projects one and the
+  blog slider silently drives the wrong counter. The factory resolves
+  `track.closest(".screen").querySelector(".tbar")`.
+- Same for the tmux pane suffix: each `.pane` carries
+  `data-track="mantrack|blogtrack"` and the factory looks up its own.
+  Both windows now show one (`1:blogs.2`, `2:projects.1`).
+- **Three posts per `.bpage`**, owner's pick over 4 or 5 — safest on the
+  ~620px iOS viewport, and it matches the projects track's rhythm. At the
+  ~10-post cap that's 4 pages.
+- The `$ ls ~/blogs` prompt sits **outside** the track and does not slide.
+  The command didn't change; only the page of output did.
+- Auto-advance is **on**, same 7s/10s as projects (owner chose consistency
+  over a manual-only slider). The never-move-text-someone-is-reading rule
+  applies unchanged.
+- Pages are flex items so they stretch to the tallest — a short last page
+  does not make the indicator jump vertically. Verified: indicator holds
+  the same y on a 3-post and a 2-post page.
 - **`#projects` is the one screen where the mac sits LEFT** and the text
   reads right (`.mac.flip`, `#projects .inner { justify-content: flex-end }`,
   ≥1021px only). The flip is a `translateX(-580px)` — the exact mirror of
@@ -400,6 +436,19 @@ width (~390px) to make sure nothing wraps or clips.
   "overflow". To test true mobile width, constrain `body { width: 390px }`
   in the test copy, or probe `getBoundingClientRect().right > 391` from an
   injected script and read it back via `--dump-dom`.
+- **Setting `scrollLeft` on a track does not fire its `scroll` handler here.**
+  The assignment lands (reads back correctly) but the event is swallowed, so
+  the indicator never resyncs and the slider looks broken when it isn't.
+  `track.dispatchEvent(new Event("scroll"))` after the assignment exercises
+  the real handler; that's how the blog track's page-2 resync was verified.
+  A genuine swipe still has to be checked on a device.
+- **Two overflow probes give false positives at mobile width.**
+  `documentElement.scrollWidth` reports the 500px headless floor, not the
+  390px test body — measure `document.body.scrollWidth` vs
+  `body.clientWidth` instead. And "does any `li` extend past 391px" counts
+  the *off-screen pages of a horizontal track*, which is the carousel
+  working. Restrict the check to the visible page, then assert the track
+  clips (`clientWidth` < `scrollWidth`) while the body does not.
 - The `.mac` is `position: fixed`, so in a tall stacked-test window it sits
   at the bottom of the *whole* render, not per screen — crop the bottom band
   to inspect it. To force a specific app/lid state in a test copy, `sed` the

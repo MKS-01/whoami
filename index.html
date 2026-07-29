@@ -101,7 +101,11 @@
      this is `x` here and `y` on <html>; don't merge the two declarations.
      scrollbar-width/::-webkit-scrollbar hide the strip: the segments below
      are the position indicator. */
-  .mantrack {
+  /* `.blogtrack` is the same mechanism paging the post list on #blog — the
+     list outgrew one snap screen once the 2020 archive posts landed. Only
+     the list slides; the `$ ls ~/blogs` prompt above it stays put, because
+     the command didn't change, just the page of output you're looking at. */
+  .mantrack, .blogtrack {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -110,14 +114,20 @@
     -ms-overflow-style: none;
     outline: none;
   }
-  .mantrack::-webkit-scrollbar { display: none; }
-  .mantrack:focus-visible { outline: 1px dotted var(--text-faint); outline-offset: 6px; }
-  .card {
+  .mantrack::-webkit-scrollbar, .blogtrack::-webkit-scrollbar { display: none; }
+  .mantrack:focus-visible, .blogtrack:focus-visible {
+    outline: 1px dotted var(--text-faint);
+    outline-offset: 6px;
+  }
+  .card, .bpage {
     flex: 0 0 100%;
     min-width: 0;
     scroll-snap-align: start;
     position: relative;   /* anchors the card's own .dither */
   }
+  /* the list already carries the gap under the prompt; a page is just a
+     column of it, so it adds no margin of its own */
+  .bpage > .output { margin-top: 0; }
   /* the card's first line is a `$ man …` prompt and sits at the top of the
      screen's stack, same as the old per-project screens did */
   .card > .prompt { margin-top: 0; }
@@ -868,38 +878,51 @@
       <div class="content">
       <span class="dither" aria-hidden="true"><i></i><i></i><i></i></span>
       <p class="prompt in" style="--i:0"><span class="cmd">ls ~/blogs</span></p>
-      <ul class="output projects">
-        <li class="in" style="--i:1">
-          <a href="blog/the-mesh-needed-two.html">
-            <span class="name">the-mesh-needed-two</span>
-            <p class="desc">a mesh needs two boards — so i built what one can do<span class="meta">2026-07-26 <span class="sep">·</span> 3 min</span></p>
-          </a>
-        </li>
-        <li class="in" style="--i:2">
-          <a href="blog/home-server-on-512mb.html">
-            <span class="name">home-server-on-512mb</span>
-            <p class="desc">what a $15 board runs, and how it fits together<span class="meta">2026-07-21 <span class="sep">·</span> 2 min</span></p>
-          </a>
-        </li>
-        <li class="in" style="--i:3">
-          <a href="blog/why-i-built-readback.html">
-            <span class="name">why-i-built-readback</span>
-            <p class="desc">started as a voice agent — the reader is what was left<span class="meta">2026-07-21 <span class="sep">·</span> 5 min</span></p>
-          </a>
-        </li>
-        <li class="in" style="--i:4">
-          <a href="blog/ble-recon-bettercap.html">
-            <span class="name">ble-recon-bettercap</span>
-            <p class="desc">three commands and a fitness band tells you everything<span class="meta">2020-06-24 <span class="sep">·</span> 2 min</span></p>
-          </a>
-        </li>
-        <li class="in" style="--i:5">
-          <a href="blog/nas-on-a-raspberry-pi.html">
-            <span class="name">nas-on-a-raspberry-pi</span>
-            <p class="desc">a dead laptop's drive, a spare pi, and samba<span class="meta">2020-04-24 <span class="sep">·</span> 2 min</span></p>
-          </a>
-        </li>
-      </ul>
+      <div class="blogtrack" id="blogtrack" tabindex="0" role="group"
+           aria-roledescription="carousel" aria-label="blog posts">
+        <div class="bpage">
+        <ul class="output projects">
+          <li class="in" style="--i:1">
+            <a href="blog/the-mesh-needed-two.html">
+              <span class="name">the-mesh-needed-two</span>
+              <p class="desc">a mesh needs two boards — so i built what one can do<span class="meta">2026-07-26 <span class="sep">·</span> 3 min</span></p>
+            </a>
+          </li>
+          <li class="in" style="--i:2">
+            <a href="blog/home-server-on-512mb.html">
+              <span class="name">home-server-on-512mb</span>
+              <p class="desc">what a $15 board runs, and how it fits together<span class="meta">2026-07-21 <span class="sep">·</span> 2 min</span></p>
+            </a>
+          </li>
+          <li class="in" style="--i:3">
+            <a href="blog/why-i-built-readback.html">
+              <span class="name">why-i-built-readback</span>
+              <p class="desc">started as a voice agent — the reader is what was left<span class="meta">2026-07-21 <span class="sep">·</span> 5 min</span></p>
+            </a>
+          </li>
+        </ul>
+        </div>
+        <div class="bpage">
+        <ul class="output projects">
+          <li class="in" style="--i:4">
+            <a href="blog/ble-recon-bettercap.html">
+              <span class="name">ble-recon-bettercap</span>
+              <p class="desc">three commands and a fitness band tells you everything<span class="meta">2020-06-24 <span class="sep">·</span> 2 min</span></p>
+            </a>
+          </li>
+          <li class="in" style="--i:5">
+            <a href="blog/nas-on-a-raspberry-pi.html">
+              <span class="name">nas-on-a-raspberry-pi</span>
+              <p class="desc">a dead laptop's drive, a spare pi, and samba<span class="meta">2020-04-24 <span class="sep">·</span> 2 min</span></p>
+            </a>
+          </li>
+        </ul>
+        </div>
+      </div>
+      <div class="tbar">
+        <span class="segs" aria-hidden="true"><i><b></b></i><i><b></b></i></span>
+        <span class="tcount" aria-live="polite">1/2</span>
+      </div>
       </div>
     </div>
   </div>
@@ -976,9 +999,9 @@
   <!-- ── blog index ───────────────────────────────────────────────────
        ADD A POST = 2 steps:
          1. copy blog/_template.html → blog/<slug>.html, fill it in
-         2. paste the <li> below into the list, NEWEST FIRST, then push the
-            --i of every <li> after it up by one so the print order stays
-            sequential
+         2. paste the <li> below into the FIRST .bpage, NEWEST FIRST, then
+            push the --i of every <li> after it up by one so the print order
+            stays sequential
 
        <li class="in" style="--i:N">
          <a href="blog/<slug>.html">
@@ -988,28 +1011,39 @@
          </a>
        </li>
 
+       THREE POSTS PER .bpage. Adding one pushes the last <li> of each page
+       down into the next, so re-balance the pages after inserting — and if
+       that opens a new .bpage, add a matching <i><b></b></i> to .segs and
+       fix the `N/M` in .tcount. The JS reads the page count off the DOM, so
+       those two are the only hand-kept copies.
+
        The date and read-time must match the post's own `written … · N min`
        meta line — they're two hand-kept copies, so change both together.
 
-       Keep it to ~10 posts and slugs to ≤23 chars — this screen is sized
-       for one viewport, and longer slugs wrap the name column.
+       Keep it to ~10 posts and slugs to ≤23 chars — longer slugs wrap the
+       name column.
   ── -->
 </main>
 <nav class="rail" aria-label="sections">
   <span class="sess">[mks]</span>
   <a href="#home" class="active">0:whoami</a>
-  <a href="#blog">1:blogs</a>
-  <!-- tmux pane suffix: .N is which card the track is showing -->
-  <a href="#projects">2:projects<span class="pane">.1</span></a>
+  <!-- tmux pane suffix: .N is which page/card the screen's track is showing -->
+  <a href="#blog">1:blogs<span class="pane" data-track="blogtrack">.1</span></a>
+  <a href="#projects">2:projects<span class="pane" data-track="mantrack">.1</span></a>
 </nav>
 <div class="site-foot" aria-hidden="true">© <span id="year">2026</span> mks</div>
 <script>
-  /* ── projects track ─────────────────────────────────────────────────
-     One screen, three man pages, auto-advancing. The rule the whole thing
-     is built around: never slide text out from under someone reading it.
-     Hover, focus, touch or a manual scroll holds the track; it only
-     resumes after a quiet spell, and prefers-reduced-motion turns
-     auto-advance off entirely (the track stays swipeable). */
+  /* ── horizontal tracks ──────────────────────────────────────────────
+     Two screens page their content sideways so the deck stays at three
+     scrolls: #projects (three man pages) and #blog (the post list, three
+     per page). One factory drives both — they differ only in whether the
+     live item names the mac's app.
+
+     The rule the whole thing is built around: never slide text out from
+     under someone reading it. Hover, focus, touch or a manual scroll holds
+     the track; it only resumes after a quiet spell, and
+     prefers-reduced-motion turns auto-advance off entirely (the track
+     stays swipeable). */
   const mac = document.querySelector(".mac");
   /* Single door for changing the mac's app, so the pixel wipe fires no
      matter who asks — the screen observer or the projects track. Skips the
@@ -1024,40 +1058,46 @@
     void mac.offsetWidth;      /* reflow, or re-adding the class is a no-op */
     mac.classList.add("swap");
   };
-  const track = document.getElementById("mantrack");
-  const cards = track ? [...track.querySelectorAll(".card")] : [];
-  let cardIdx = 0;
+  /* `namesApp: true` means the live item IS what the mac should show
+     (#projects has no app of its own — the live card names it). #blog
+     keeps its own app, so its track just pages the list. */
+  const makeTrack = (id, namesApp) => {
+    const track = document.getElementById(id);
+    if (!track) return null;
+    const items = [...track.children];
+    if (!items.length) return null;
 
-  if (track && cards.length) {
-    const segs = [...document.querySelectorAll(".segs i")];
-    const count = document.querySelector(".tcount");
-    const tbar = document.querySelector(".tbar");
-    const pane = document.querySelector(".rail .pane");
+    /* scope the indicator to this track's own screen — with two tbars on
+       the page a bare document.querySelector(".tbar") grabs the wrong one */
+    const scope = track.closest(".screen") || document;
+    const tbar = scope.querySelector(".tbar");
+    const segs = tbar ? [...tbar.querySelectorAll(".segs i")] : [];
+    const count = tbar ? tbar.querySelector(".tcount") : null;
+    const pane = document.querySelector('.rail .pane[data-track="' + id + '"]');
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const DWELL = 7000;    /* time on each card — matches --dwell in the CSS */
+    const DWELL = 7000;    /* time on each item — matches --dwell in the CSS */
     const IDLE = 10000;    /* quiet time before auto-advance comes back */
-    let tick = null, idleTimer = null, held = false, onScreen = false;
+    let idx = 0, tick = null, idleTimer = null, held = false, onScreen = false;
 
     const paint = () => {
-      cards.forEach((c, i) => c.classList.toggle("live", i === cardIdx));
+      items.forEach((c, i) => c.classList.toggle("live", i === idx));
       segs.forEach((s, i) => {
         /* restart the countdown fill: re-adding the class isn't enough,
            the animation has to be taken off the element and put back */
         s.classList.remove("on", "done");
         void s.offsetWidth;
-        s.classList.toggle("on", i === cardIdx);
-        s.classList.toggle("done", i < cardIdx);
+        s.classList.toggle("on", i === idx);
+        s.classList.toggle("done", i < idx);
       });
-      if (count) count.textContent = (cardIdx + 1) + "/" + cards.length;
-      if (pane) pane.textContent = "." + (cardIdx + 1);
-      /* the mac has no app for #projects itself — it shows the live card's */
-      if (onScreen) setApp(cards[cardIdx].id);
+      if (count) count.textContent = (idx + 1) + "/" + items.length;
+      if (pane) pane.textContent = "." + (idx + 1);
+      if (onScreen && namesApp) setApp(items[idx].id);
     };
 
-    const goCard = (i, smooth) => {
-      cardIdx = (i + cards.length) % cards.length;
+    const go = (i, smooth) => {
+      idx = (i + items.length) % items.length;
       track.scrollTo({
-        left: cardIdx * track.clientWidth,
+        left: idx * track.clientWidth,
         behavior: smooth && !still.matches ? "smooth" : "auto"
       });
       paint();
@@ -1074,10 +1114,7 @@
     const start = () => {
       stop();
       if (held || still.matches || !onScreen) return;
-      tick = setInterval(() => goCard(cardIdx + 1, true), DWELL);
-    };
-    const setAuto = (on) => {
-      if (tbar) tbar.classList.toggle("running", !!on && !still.matches);
+      tick = setInterval(() => go(idx + 1, true), DWELL);
     };
     const hold = () => {
       held = true;
@@ -1108,38 +1145,45 @@
       clearTimeout(settle);
       settle = setTimeout(() => {
         const i = Math.round(track.scrollLeft / track.clientWidth);
-        if (i !== cardIdx && cards[i]) { cardIdx = i; paint(); }
+        if (i !== idx && items[i]) { idx = i; paint(); }
       }, 120);
     }, { passive: true });
 
     track.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight") { hold(); release(); goCard(cardIdx + 1, true); }
-      if (e.key === "ArrowLeft")  { hold(); release(); goCard(cardIdx - 1, true); }
+      if (e.key === "ArrowRight") { hold(); release(); go(idx + 1, true); }
+      if (e.key === "ArrowLeft")  { hold(); release(); go(idx - 1, true); }
     });
 
-    /* only runs while the projects screen is the one on screen — an
-       invisible carousel burning through its cards helps nobody */
-    window.__trackScreen = (active) => {
-      onScreen = active;
-      setAuto(active);
-      if (active) {
-        paint();
-        start();
-      } else {
-        /* leaving the screen clears the held state too — otherwise a hover
-           on the way past would leave the track frozen for the next visit */
-        stop();
-        clearTimeout(idleTimer);
-        held = false;
-        if (tbar) tbar.classList.remove("paused");
-      }
-    };
-    window.__trackTo = (id) => {
-      const i = cards.findIndex((c) => c.id === id);
-      if (i > -1) goCard(i, false);
-    };
     paint();
-  }
+    return {
+      /* only runs while its own screen is in view — an invisible carousel
+         burning through its items helps nobody */
+      screen(active) {
+        onScreen = active;
+        if (tbar) tbar.classList.toggle("running", active && !still.matches);
+        if (active) { paint(); start(); }
+        else {
+          /* leaving the screen clears the held state too — otherwise a
+             hover on the way past would freeze it for the next visit */
+          stop();
+          clearTimeout(idleTimer);
+          held = false;
+          if (tbar) tbar.classList.remove("paused");
+        }
+      },
+      to(childId) {
+        const i = items.findIndex((c) => c.id === childId);
+        if (i > -1) go(i, false);
+      },
+      liveId() { return namesApp ? items[idx].id : null; }
+    };
+  };
+
+  /* keyed by the screen id each track lives on */
+  const tracks = {
+    projects: makeTrack("mantrack", true),
+    blog: makeTrack("blogtrack", false)
+  };
 
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((entries) => {
@@ -1156,13 +1200,15 @@
         if (e.isIntersecting) {
           const i = screens.indexOf(e.target);
           rail.forEach((d, j) => d.classList.toggle("active", j === i));
-          /* #projects has no app of its own — the live card names it. The
-             track only auto-advances while this screen is the one on view. */
-          const onTrack = e.target.id === "projects" && cards.length;
-          setApp(onTrack ? cards[cardIdx].id : e.target.id);
+          /* #projects has no app of its own — the live card names it. */
+          const here = tracks[e.target.id];
+          setApp((here && here.liveId()) || e.target.id);
           /* the mac slides to the left half on the projects screen */
           if (mac) mac.classList.toggle("flip", e.target.id === "projects");
-          if (window.__trackScreen) window.__trackScreen(!!onTrack);
+          /* a track auto-advances only while its own screen is in view */
+          for (const key in tracks) {
+            if (tracks[key]) tracks[key].screen(key === e.target.id);
+          }
         }
       }
       /* center-line detector: fires when a screen crosses the viewport's
@@ -1210,7 +1256,7 @@
   const jump = (hash, smooth) => {
     const hit = resolve(hash);
     if (!hit) return false;
-    if (hit.card && window.__trackTo) window.__trackTo(hit.card);
+    if (hit.card && tracks.projects) tracks.projects.to(hit.card);
     goTo(hit.screen, smooth);
     return true;
   };

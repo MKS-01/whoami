@@ -51,6 +51,15 @@ labelled as a draft, and deleted unread for exactly this reason.
    stays sequential. (There is no longer a wip line under the list — it was
    removed in July 2026; don't re-add a "coming soon" placeholder.)
 
+**The list is paged — three posts per `.bpage`** (July 2026, see
+`portfolio-conventions` → "Blog track"). So step 2 has a tail: the new `<li>`
+goes at the top of the *first* `.bpage`, which pushes the last entry of each
+page down into the next, so **re-balance every page back to three**. If that
+opens a new page, add a matching `<i><b></b></i>` to `#blog .segs` and fix
+the `N/M` in `.tcount` — the JS reads the page count off the DOM, so those
+two are the only hand-kept copies. `--i` keeps running across pages (page 2
+starts at 4, not 1); it's a print order, not a per-page index.
+
 ```html
 <li class="in" style="--i:N">
   <a href="blog/<slug>.html">
