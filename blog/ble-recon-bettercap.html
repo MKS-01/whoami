@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ble recon with bettercap — mks.sh</title>
+<meta name="description" content="Three commands to enumerate a fitness band's entire GATT table over Bluetooth Low Energy.">
+<meta property="og:title" content="ble recon with bettercap">
+<meta property="og:description" content="Three commands to enumerate a fitness band's entire GATT table over Bluetooth Low Energy.">
+<meta property="og:type" content="article">
+<link rel="icon" href="../favicon.svg?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="post.css">
+<script src="../theme.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="in" style="--i:0">
+    <a class="back" href="../index.html#blog">
+      <h1><svg class="alien" viewBox="0 0 128 128" aria-hidden="true"><path fill="var(--accent)" d="M64,4.5C36.2,4.5,8,28.1,8,55.8s44.3,67.7,56.2,67.7c13.2,0,55.8-39.9,55.8-67.7S91.8,4.5,64,4.5z"/><path fill="var(--accent)" d="M64,4.5c14.52,0,29.13,6.42,39.8,16.5C93,9.46,77.17,2,61.47,2c-27.8,0-56,23.6-56,51.3c0,15.6,14.06,35.11,28.47,49.18C20.46,88.64,8,70.49,8,55.8C8,28.1,36.2,4.5,64,4.5z"/><path fill="var(--bg)" d="M64,102.35c-9.37,0-16.06-5.52-18.07-8.58c-0.76-0.98-0.92-2.31-0.41-3.44c0.39-0.74,1.17-1.18,2-1.15c0.3,0,0.6,0.05,0.88,0.15C53.1,90.8,57.23,93,64,93s10.92-2.16,15.63-3.63c0.28-0.1,0.58-0.15,0.88-0.15c0.83-0.03,1.61,0.41,2,1.15c0.51,1.13,0.35,2.46-0.41,3.44C80.06,96.83,73.37,102.35,64,102.35z M54.05,81.56c-3,3.88-17.71,3.89-28.85-6.36c-10.09-9.28-9.46-25.64-6.13-28.94s19.19-3.38,28.85,6.36S57.72,77.92,54.05,81.56z M80.08,52.58c9.66-9.7,25.52-9.62,28.85-6.33s3.53,19.11-6.13,28.8S77.64,85,73.94,81.38S70.42,62.28,80.08,52.58z"/></svg> mks<span class="tld">.sh</span></h1>
+    </a>
+  </header>
+
+  <p class="prompt in" style="--i:1"><span class="cmd">less ~/blogs/ble-recon-bettercap.md</span></p>
+
+  <h2 class="post-title in" style="--i:2">ble recon with bettercap</h2>
+  <p class="post-meta in" style="--i:3">written 2020-06-24 · 2 min</p>
+
+  <div class="post in" style="--i:4">
+
+    <p>Heart rate sensors, smart scales, iBeacons — early startup days, a lot
+    of prototypes, and most of them talked over Bluetooth Low Energy. Pulling
+    data off a sensor or wiring one up to a native Android or iOS client was
+    routine work.</p>
+
+    <p>What stuck with me was how little stands in the way. Most of these
+    devices will tell you everything about themselves before you have
+    authenticated anything. <a href="https://www.bettercap.org/">Bettercap</a>
+    turns that into three commands.</p>
+
+    <h2>the setup</h2>
+
+    <p>Bettercap is a recon and MITM framework written in Go — WiFi, Ethernet,
+    2.4GHz HID, and the part I care about here: BLE scanning, characteristic
+    enumeration, and reading and writing those characteristics.</p>
+
+    <p>Mine runs on a Raspberry Pi 3 with Kali on it, headless over SSH. The
+    Pi's onboard radio is enough; no external adapter needed for BLE.</p>
+
+    <h2>discovery</h2>
+
+    <p>Start the pager and turn the BLE module on. Devices start falling in
+    immediately — every phone, watch and pair of earbuds in the room
+    announcing itself.</p>
+
+    <pre><code><span class="g">$</span> bettercap
+bettercap v2.26.1 (built for linux arm64 with go1.13.8)
+
+» ble.recon on
+» [20:11:28] [ble.device.new] new BLE device detected (Apple, Inc.) -39 dBm.
+» [20:11:28] [ble.device.new] new BLE device detected (Apple, Inc.) -41 dBm.
+» [20:11:28] [ble.device.new] new BLE device honor Band 4-43F
+                              detected (Huawei Technologies) -28 dBm.
+» [20:11:58] [ble.device.new] new BLE device detected (Apple, Inc.) -56 dBm.</code></pre>
+
+    <p><code>ble.show</code> prints what it has collected, sorted by signal
+    strength. The strongest return at -28 dBm is a fitness band on my wrist,
+    which makes it the obvious thing to poke at.</p>
+
+    <pre><code>» ble.show
+
+ RSSI ▲    Vendor                  Flags                        Connect
+ -28 dBm   Huawei Technologies     BR/EDR Not Supported            ✔
+ -54 dBm   Apple, Inc.             LE + BR/EDR (controller/host)   ✔
+ -54 dBm   Apple, Inc.             BR/EDR Not Supported            ✔
+ -56 dBm   Apple, Inc.             BR/EDR Not Supported            ✔</code></pre>
+
+    <h2>enumeration is the interesting part</h2>
+
+    <p><code>ble.enum MAC</code> connects and walks the device's GATT table —
+    every service, every characteristic, what you are allowed to do with each
+    one. This is the whole point. No pairing, no PIN, no prompt on the band.</p>
+
+    <pre><code>» ble.enum &lt;mac&gt;
+
+ Handles       Service &gt; Characteristics          Properties      Data
+ 0001 -&gt; 0009  Generic Access
+ 0003            Device Name (2a00)               READ            honor Band 4-43F
+ 0005            Appearance (2a01)                READ            Unknown
+
+ 0010 -&gt; 0020  Device Information
+ 0012            Manufacturer Name String (2a29)  READ            HUAWEI
+ 0014            System ID (2a23)                 READ            0102030405_0000
+ 0016            Model Number String (2a24)       READ            HUAWEI
+ 001a            Firmware Revision String (2a26)  READ            1.0.0.1
+ 001c            Hardware Revision String (2a27)  READ            1.0.0.1
+
+ 002a -&gt; 0034  fe86
+ 002c            fe01                             WRITE
+ 002e            fe02                             NOTIFY
+
+ 0100 -&gt; 0112  Human Interface Device
+ 0102            HID Information (2a4a)           READ            01010003
+ 0107            HID Control Point (2a4c)         WRITE
+ 0109            Boot Keyboard Input (2a22)       READ, NOTIFY    insufficient authentication
+ 010e            Report (2a4d)                    READ, NOTIFY    insufficient authentication</code></pre>
+
+    <p>Two things worth reading in that dump. First, the device volunteers its
+    manufacturer, model and firmware revision to anyone who asks — that is a
+    fingerprint, and firmware revisions map to known bugs.</p>
+
+    <p>Second, look at where it <b>does</b> push back. The Human Interface
+    Device service returns <code>insufficient authentication</code> on its
+    report characteristics, and one handle further down is flatly
+    <code>read not permitted</code>. So the band draws a line — just not in
+    front of the metadata, and not in front of the vendor-specific
+    <code>fe86</code> service sitting there with a writable characteristic and
+    no documentation.</p>
+
+    <h2>the module, in full</h2>
+
+    <div class="scroll-x">
+    <table>
+      <tr><td><code>ble.recon on</code></td><td>start BLE discovery</td></tr>
+      <tr><td><code>ble.recon off</code></td><td>stop it</td></tr>
+      <tr><td><code>ble.clear</code></td><td>drop everything collected so far</td></tr>
+      <tr><td><code>ble.show</code></td><td>list discovered devices</td></tr>
+      <tr><td><code>ble.enum MAC</code></td><td>enumerate services and characteristics</td></tr>
+      <tr><td><code>ble.write MAC UUID HEX</code></td><td>write a buffer to a characteristic</td></tr>
+    </table>
+    </div>
+
+    <p>That last one is where recon stops and tampering starts, which is a
+    different post. Everything above is passive by comparison: you connect,
+    you read what the device offers, you disconnect. The uncomfortable part is
+    how much it offers.</p>
+
+  </div>
+
+  <p class="eof in" style="--i:5">(END)</p>
+  <p class="cmdline in" style="--i:6"><a href="../index.html#blog">cd ~/blogs</a></p>
+</div>
+
+<nav class="rail" aria-label="sections">
+  <span class="sess">[mks]</span>
+  <a href="../index.html#home">0:whoami</a>
+  <a href="../index.html#blog" class="active">1:blogs</a>
+</nav>
+<div class="site-foot" aria-hidden="true">© <span id="year">2026</span> mks</div>
+<script>
+  const yr = document.getElementById("year");
+  if (yr) yr.textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
