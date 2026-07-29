@@ -323,7 +323,7 @@ Render and **read the screenshot** — desktop and narrow:
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless --disable-gpu --virtual-time-budget=2500 \
   --screenshot=/tmp/post.png --window-size=1400,1000 --hide-scrollbars \
-  "file:///Users/mks/Desktop/C0D3/about-me/blog/<slug>.html"
+  "file:///Users/mks/Desktop/C0D3/whoami/blog/<slug>.html"
 ```
 
 Post pages are ordinary scrolling documents, so unlike the deck they

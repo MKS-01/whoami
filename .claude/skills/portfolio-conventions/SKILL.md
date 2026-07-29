@@ -384,7 +384,7 @@ Chrome and reading the screenshot back — don't just eyeball the diff:
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless --disable-gpu --virtual-time-budget=2000 \
   --screenshot=/path/to/out.png --window-size=1800,1050 --hide-scrollbars \
-  "file:///Users/mks/Desktop/C0D3/about-me/index.html"
+  "file:///Users/mks/Desktop/C0D3/whoami/index.html"
 ```
 Then `Read` the PNG. Check both the animated-in state (no budget flag) and
 the settled end state (`--virtual-time-budget` past ~700ms) plus a mobile

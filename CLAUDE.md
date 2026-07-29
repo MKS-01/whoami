@@ -6,9 +6,12 @@ Guidance for Claude Code working in this repo.
 
 `mks.sh` — a static personal portfolio styled as a terminal session, plus a
 small blog. Deployed as a GitHub Page at **mks-01.github.io/whoami**
-(repo `MKS-01/whoami`, renamed from `about-me` July 2026 — GitHub redirects
-the old URL, but that redirect dies if anything ever reclaims the old name,
-so update links rather than relying on it). There is no build step, no framework, no dependencies —
+(repo `MKS-01/whoami`, renamed from `about-me` July 2026). Only the *repo*
+URL redirects — `github.com/MKS-01/about-me` 301s, and even that dies if the
+old name is ever reclaimed. The old **Pages** URL does not redirect at all:
+`mks-01.github.io/about-me/` is a hard 404 (verified July 2026). Any shared
+link to the old site address is already broken — update links, never rely on
+a redirect. There is no build step, no framework, no dependencies —
 open a file and it runs.
 
 ```
