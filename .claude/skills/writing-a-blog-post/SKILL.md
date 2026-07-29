@@ -51,9 +51,17 @@ labelled as a draft, and deleted unread for exactly this reason.
    stays sequential. (There is no longer a wip line under the list — it was
    removed in July 2026; don't re-add a "coming soon" placeholder.)
 
+**`why-i-built-readback` is pinned to the top** (owner, July 2026) and holds
+that slot whatever its date, so the list is no longer purely newest-first.
+Its `.meta` reads `pinned · YYYY-MM-DD · N min` while every other entry
+starts with the date. A new post goes **below** the pinned one. The
+out-of-order dates are deliberate — don't resort to "fix" them, and don't
+drop the `pinned` word, because without it the ordering just reads as a bug.
+
 **The list is paged — three posts per `.bpage`** (July 2026, see
 `portfolio-conventions` → "Blog track"). So step 2 has a tail: the new `<li>`
-goes at the top of the *first* `.bpage`, which pushes the last entry of each
+goes at the top of the *first* `.bpage` (below the pin), which pushes the
+last entry of each
 page down into the next, so **re-balance every page back to three**. If that
 opens a new page, add a matching `<i><b></b></i>` to `#blog .segs` and fix
 the `N/M` in `.tcount` — the JS reads the page count off the DOM, so those

@@ -883,21 +883,21 @@
         <div class="bpage">
         <ul class="output projects">
           <li class="in" style="--i:1">
+            <a href="blog/why-i-built-readback.html">
+              <span class="name">why-i-built-readback</span>
+              <p class="desc">started as a voice agent — the reader is what was left<span class="meta">pinned <span class="sep">·</span> 2026-07-21 <span class="sep">·</span> 5 min</span></p>
+            </a>
+          </li>
+          <li class="in" style="--i:2">
             <a href="blog/the-nas-rebuilt.html">
               <span class="name">the-nas-rebuilt</span>
               <p class="desc">it used to live in my head; now a script and an agent run it<span class="meta">2026-07-30 <span class="sep">·</span> 2 min</span></p>
             </a>
           </li>
-          <li class="in" style="--i:2">
+          <li class="in" style="--i:3">
             <a href="blog/the-mesh-needed-two.html">
               <span class="name">the-mesh-needed-two</span>
               <p class="desc">a mesh needs two boards — so i built what one can do<span class="meta">2026-07-26 <span class="sep">·</span> 3 min</span></p>
-            </a>
-          </li>
-          <li class="in" style="--i:3">
-            <a href="blog/home-server-on-512mb.html">
-              <span class="name">home-server-on-512mb</span>
-              <p class="desc">what a $15 board runs, and how it fits together<span class="meta">2026-07-21 <span class="sep">·</span> 2 min</span></p>
             </a>
           </li>
         </ul>
@@ -905,9 +905,9 @@
         <div class="bpage">
         <ul class="output projects">
           <li class="in" style="--i:4">
-            <a href="blog/why-i-built-readback.html">
-              <span class="name">why-i-built-readback</span>
-              <p class="desc">started as a voice agent — the reader is what was left<span class="meta">2026-07-21 <span class="sep">·</span> 5 min</span></p>
+            <a href="blog/home-server-on-512mb.html">
+              <span class="name">home-server-on-512mb</span>
+              <p class="desc">what a $15 board runs, and how it fits together<span class="meta">2026-07-21 <span class="sep">·</span> 2 min</span></p>
             </a>
           </li>
           <li class="in" style="--i:5">
@@ -1002,6 +1002,11 @@
          2. paste the <li> below into the FIRST .bpage, NEWEST FIRST, then
             push the --i of every <li> after it up by one so the print order
             stays sequential
+
+       EXCEPTION: why-i-built-readback is PINNED to the top and stays there
+       regardless of date — that's why its meta line reads `pinned · date ·
+       N min` while every other entry starts with the date. A new post goes
+       BELOW it, not above. Don't "fix" the out-of-order dates by resorting.
 
        <li class="in" style="--i:N">
          <a href="blog/<slug>.html">
