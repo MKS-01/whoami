@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # so a broken post is caught on the PR, not after it is live
+  pull_request:
+    branches: [main]
 
 # Least-privilege token scoped for Pages deploys.
 permissions:
@@ -11,35 +14,55 @@ permissions:
   pages: write
   id-token: write
 
-# Let a running deploy finish; queue the next one instead of cancelling.
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  # Nothing is generated, so there is no build — but nothing is compiled
+  # either, and that is the risk. Every script ships unbundled and every
+  # post is parsed in the visitor's browser, so a syntax error or a broken
+  # post is not a failed build: it is a blank page someone finds. This job
+  # is the only thing standing between that and production.
+  check:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Nothing is generated, so there is no build — but every script ships
-      # unbundled to the browser with no compile step to fail first, and a
-      # syntax error would reach visitors as a silently dead page. Catch it
-      # here instead. Installs nothing: the repo has no dependencies.
+      # Installs nothing — the repo has no dependencies, so there is no
+      # `bun install` step here and there must never need to be.
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Parse every script
+      # Parses every script, then loads every post through the same parser
+      # the browser uses: front matter, required keys, date format, slug
+      # length, the word ceiling, the post cap, and both directions of
+      # blogs.txt (a slug with no file, a file no slug points at).
+      - name: Check scripts and posts
         run: bun run check
+
+  deploy:
+    needs: check
+    # a PR gets the checks; only main deploys
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    # Scoped to this job, not the workflow: as a top-level group it also
+    # covered the PR checks, so an open PR could hold the `pages` slot and
+    # stall a deploy of main. Let a running deploy finish, queue the next.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      # The whole repo ships, and it has to: `blogs/*.md` and
+      # `blogs/blogs.txt` are RUNTIME assets — the browser fetches them to
+      # draw a post and the landing list. Excluding them to slim the
+      # artifact would leave the blog blank while every page still looked
+      # fine in CI. If you ever narrow this path, they must stay.
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -13,7 +13,7 @@
 import { file } from "bun";
 
 const FILES = ["theme.js", "deck.js", "blogs/markdown.js", "blogs/render.js",
-               "tools/dev.js", "tools/check-js.js"];
+               "tools/dev.js", "tools/check-js.js", "tools/check-posts.js"];
 const ROOT = new URL("..", import.meta.url).pathname;
 const transpiler = new Bun.Transpiler({ loader: "js" });
 
