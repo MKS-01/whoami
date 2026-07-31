@@ -24,10 +24,11 @@ frontmatter, then the instructions).
   proposing — and when a change encodes a new hard-won lesson, add it here.
 
 - **writing-a-blog-post/** — post-specific: the `less(1)` conceit, the
-  already-styled prose markup, the 85%-technical shape rule, the 5-minute
-  ceiling, the date rules, and the two-file publish step. Assumes
-  `portfolio-conventions` for the underlying design system, so read this one
-  second, not instead of it.
+  markdown subset and front matter, the 85%-technical shape rule, the
+  5-minute ceiling, the date rules, and the one-command publish step
+  (`blog/posts/<slug>.md` → `python3 tools/build-blog.py`; **`blog/*.html` is
+  generated, never hand-edited**). Assumes `portfolio-conventions` for the
+  underlying design system, so read this one second, not instead of it.
 
 ## Installed skills
 

@@ -1,18 +1,24 @@
 ---
 name: writing-a-blog-post
-description: How to write and publish a post on mks.sh — the blog/*.html format, the less(1) conceit, prose markup, read-time, and the two-file publish step. Use whenever adding, drafting, editing, or removing a blog post.
+description: How to write and publish a post on mks.sh — the blog/posts/*.md format and front matter, the less(1) conceit, the markdown subset, read-time, and the one-command publish step. Use whenever adding, drafting, editing, or removing a blog post.
 ---
 
 # Writing a post for mks.sh
 
-Posts are hand-written HTML files in `blog/`, one per post. No markdown, no
-build step, no generator. Two stylesheets do all the work — `../style.css`
-supplies every token and the terminal grammar, `post.css` supplies the prose
-rhythm — so a post file is **content only**.
+A post is one markdown file: `blog/posts/<slug>.md`, front matter plus prose.
+`python3 tools/build-blog.py` turns it into `blog/<slug>.html` — the whole
+page, chrome and all — and rewrites the post list on the landing page.
 
-A new post should carry **no `<style>` block at all**. Everything in the
-markup table below is already styled. If you're about to write CSS in a
-post, it almost certainly belongs in `blog/post.css`.
+**`blog/*.html` is generated output. Never edit one** (July 2026; before that
+they were hand-written, and each carried ~55 lines of copy-pasted chrome plus
+a second copy of the post's own metadata). The next build overwrites your
+edit, and `build-blog.py --check` runs in the Pages workflow, so it fails the
+deploy first.
+
+Two stylesheets do all the work — `../style.css` supplies every token and the
+terminal grammar, `post.css` supplies the prose rhythm. There is nowhere in
+a `.md` to put CSS, on purpose: if you want a rule, it belongs in
+`blog/post.css` where every post gets it.
 
 Read **`portfolio-conventions`** first for the design system and the site's
 voice rules — this skill only covers what's specific to posts.
@@ -42,55 +48,68 @@ own reasoning that he didn't write is the thing to flag hardest. An earlier
 `how-this-site-works` post was drafted from this repo's code, correctly
 labelled as a draft, and deleted unread for exactly this reason.
 
-## Publishing = 2 files
+## Publishing = 1 file + 1 command
 
-1. `cp blog/_template.html blog/<slug>.html` and fill it in (the template's
-   top comment lists every placeholder).
-2. Add one `<li>` to the `#blog` screen in `index.html`, **newest first**,
-   then push the `--i` of every entry below it up by one so the print order
-   stays sequential. (There is no longer a wip line under the list — it was
-   removed in July 2026; don't re-add a "coming soon" placeholder.)
-
-**`why-i-built-readback` is pinned to the top** (owner, July 2026) and holds
-that slot whatever its date, so the list is no longer purely newest-first.
-Its `.meta` reads `pinned · YYYY-MM-DD · N min` while every other entry
-starts with the date. A new post goes **below** the pinned one. The
-out-of-order dates are deliberate — don't resort to "fix" them, and don't
-drop the `pinned` word, because without it the ordering just reads as a bug.
-
-**The list is paged — three posts per `.bpage`** (July 2026, see
-`portfolio-conventions` → "Blog track"). So step 2 has a tail: the new `<li>`
-goes at the top of the *first* `.bpage` (below the pin), which pushes the
-last entry of each
-page down into the next, so **re-balance every page back to three**. If that
-opens a new page, add a matching `<i><b></b></i>` to `#blog .segs` and fix
-the `N/M` in `.tcount` — the JS reads the page count off the DOM, so those
-two are the only hand-kept copies. `--i` keeps running across pages (page 2
-starts at 4, not 1); it's a print order, not a per-page index.
-
-```html
-<li class="in" style="--i:N">
-  <a href="blog/<slug>.html">
-    <span class="name"><slug></span>
-    <p class="desc">one dry line<span
-      class="meta">YYYY-MM-DD <span class="sep">·</span> N min</span></p>
-  </a>
-</li>
+```bash
+cp blog/posts/_template.md blog/posts/<slug>.md
+$EDITOR blog/posts/<slug>.md
+python3 tools/build-blog.py          # writes the page AND the landing list
 ```
 
-The listing's `.meta` is the `ls -l` column: date + read-time, faint, under
-the description. **It duplicates the post's own `written … · N min` line**
-— two hand-kept copies, so set both in the same pass or the deck will
-advertise a read length the post contradicts. The `.meta` lives *inside*
-`.desc` on purpose: `.projects a` is a two-item flex row, and a third child
-would become a third column.
+Removing a post is `rm blog/posts/<slug>.md` and the same command — the
+generator deletes the orphaned page.
 
-Slugs: lowercase, hyphenated, **≤23 characters** — longer ones wrap the
-name column. The slug is the filename, the list label, and the path in the
-`$ less` prompt; keep all three identical.
+Front matter:
 
-Owner caps the blog at ~10 posts. At the cap, removing the oldest is part
-of adding a new one — ask which goes.
+| key | | |
+|---|---|---|
+| `title` | required | lowercase fragment; the `<h2>` and the `<title>` |
+| `date` | required | `YYYY-MM-DD` |
+| `desc` | required | one dry sentence — `<meta description>` + the og: card |
+| `blurb` | required | one dry line — the `ls` entry on the blog screen |
+| `pinned` | optional | `true` holds the top of the list whatever the date |
+| `updated` | optional | `YYYY-MM-DD`, only once it differs from `date` |
+| `repo` | optional | `MKS-01/<repo>` → the `git clone` line |
+| `demo` | optional | a host/path → an `open` line under it |
+
+`desc` and `blurb` are **different strings** and always were — one is the
+share card, one is the terse `ls -l` column. Don't collapse them.
+
+**Everything else is computed. Don't try to set it by hand:**
+
+- **read time** — `words ÷ 200`, rounded, min 1, code blocks and the hero
+  excluded. It lands in the post's meta line and the list entry at once, so
+  the two can no longer contradict each other.
+- **`--i` print order** — including the shift when a post has a repo line,
+  a demo line or a hero.
+- **the list** — entry markup, ordering (pinned first, then newest), the
+  three-per-`.bpage` balance, and `.segs`/`.tcount` when a page opens or
+  closes.
+
+(There is no longer a wip line under the list — removed July 2026; don't
+re-add a "coming soon" placeholder.)
+
+**`why-i-built-readback` carries `pinned: true`** (owner, July 2026) and
+holds the top slot whatever its date, so the list is not purely
+newest-first. Its `.meta` reads `pinned · YYYY-MM-DD · N min` while every
+other entry starts with the date. The out-of-order dates are deliberate —
+don't "fix" them by dropping the pin, because without the word the ordering
+just reads as a bug.
+
+The list is paged three per `.bpage` (see `portfolio-conventions` → "Blog
+track"). The generator balances the pages and updates the indicator; `--i`
+keeps running across pages (page 2 starts at 4, not 1) because it is a print
+order, not a per-page index. The `.meta` lives *inside* `.desc` on purpose:
+`.projects a` is a two-item flex row, and a third child would become a third
+column.
+
+Slugs: lowercase, hyphenated, **≤23 characters** — longer ones wrap the name
+column. The slug is the filename, the list label, and the path in the
+`$ less` prompt, and it is now literally one value, so they cannot drift. The
+build fails on a longer one.
+
+Owner caps the blog at ~10 posts and the build enforces it. At the cap,
+removing the oldest is part of adding a new one — **ask which goes.**
 
 ## Shape: a post is not a story
 
@@ -132,24 +151,28 @@ but the 2-3 line open and the short close hold for every post.
 
 ## Anatomy of a post page
 
-Fixed scaffold, in order. Don't restructure it:
+Fixed scaffold, in order. It lives in `tools/post-template.html` — one copy
+for all posts — and you get it for free. Change it there and every post
+changes; don't restructure it:
 
 ```
 header (wordmark, links back to ../index.html#blog)   --i:0
-$ less ~/blogs/<slug>.md                               --i:1
+$ less ~/blogs/<slug>.md                              --i:1
 # post title                                          --i:2
 written YYYY-MM-DD · N min                            --i:3
-$ git clone github.com/MKS-01/<repo>                  --i:4
-[optional hero <figure>]                              --i:5
-.post  ← the whole body, ONE fade                     --i:6
-(END)                                                 --i:7
-$ cd ~/blogs                                          --i:8
+$ git clone github.com/MKS-01/<repo>       optional   --i:4
+$ open <demo url>                          optional
+[hero <figure>]                            optional
+.post  ← the whole body, ONE fade
+(END)
+$ cd ~/blogs
 tmux bar: [mks] 0:whoami 1:blogs*
 ```
 
-Numbers shift if you drop the hero — keep the sequence contiguous, and
-remember `--i` is the print order, so inserting anything means renumbering
-everything after it.
+The optional lines shift everything after them, which is why `--i` is
+computed rather than typed. Note the alien SVG in that header is the one
+copy shared by every post now — the skill's warning about the mark drifting
+across files applies to `index.html` and the template, not to five posts.
 
 - The `less` framing is deliberate: `cat` is the landing's verb for short
   output, `man` belongs to projects, `less` is the pager you'd actually use
@@ -166,28 +189,59 @@ everything after it.
 
 ## Prose markup
 
-Everything below is styled already. Use these and nothing else — don't
-invent classes or reach for inline styles.
+A deliberately small markdown subset — exactly what these posts use.
+Everything below is styled already; don't invent classes or reach for inline
+styles.
 
 | Want | Write |
 |---|---|
-| paragraph | `<p>…</p>` |
-| section heading | `<h2>the deck</h2>` |
-| sub-heading | `<h3>…</h3>` |
-| emphasis | `<b>…</b>` |
-| link | `<a href="…">…</a>` |
-| inline code | `<code>…</code>` |
-| code block | `<pre><code>…</code></pre>` |
-| `$` prompt in a block | `<span class="g">$</span>` |
-| comment in a block | `<span class="c"># …</span>` |
-| list | `<ul><li>…</li></ul>` |
-| pull quote | `<blockquote>…</blockquote>` |
-| table | `<div class="scroll-x"><table>…</table></div>` |
+| paragraph | a block of lines, blank line between |
+| section heading | `## the deck` |
+| sub-heading | `### …` |
+| emphasis | `**…**` |
+| link | `[text](https://…)` |
+| inline code | `` `…` `` |
+| code block | a ``` fence |
+| `$` prompt in a block | `<span class="g">$</span>`, inside the fence |
+| comment in a block | `<span class="c"># …</span>`, inside the fence |
+| list | `- item` lines |
+| pull quote | `> …` |
+| table | a raw HTML block (below) |
+
+Those two `<span>`s are the only markup that survives inside a fence —
+everything else there is escaped, so write `<uuid>` and get `&lt;uuid&gt;`.
+You no longer escape anything by hand.
+
+**Line breaks inside a paragraph are preserved**, so wrap the markdown the
+way you want the HTML to wrap. Headings still get their `##` from CSS —
+write `## the deck`, and the rendered page prints `## the deck` once, not
+twice.
+
+### Raw HTML blocks
+
+Anything the subset can't express — a `.hero` figure, a table — is written
+as raw HTML and passes through untouched. **The opening tag starts at column
+0 and the closing tag starts at column 0**; that's how the parser finds the
+end.
+
+```html
+<div class="scroll-x">
+<table>
+  <tr><td><code>a</code></td><td>a row</td></tr>
+</table>
+</div>
+```
+
+This is an escape hatch, not the default. If you're reaching for it for
+ordinary prose, you're fighting the format.
 
 ## Hero diagram (optional)
 
 A post may open with an inline SVG diagram between the meta line and the
-body, wrapped in `<figure class="hero in">` with a `<figcaption>`. Rules:
+body. Write it as a **raw HTML block at the very top of the markdown**,
+before any prose, as `<figure class="hero">` with a `<figcaption>` — the
+generator hoists it out of `.post`, adds the `in` class and its `--i`, and
+leaves its words out of the read time. Rules:
 
 - **Draw the architecture, not decoration.** The owner approved a hero for
   `why-i-built-readback` because it carries the post's argument (a pipeline
@@ -274,8 +328,10 @@ preference, not a failure state.
 
 **No post exceeds 5 minutes**, still.
 
-Read time is `words ÷ 200`, rounded, minimum 1 — prose only, don't count
-code blocks. That makes the budget concrete:
+Read time is `words ÷ 200`, rounded, minimum 1 — prose only; code blocks and
+the hero don't count. **The generator computes it**, so you can't
+accidentally ship a padded figure, but you still have to write to the
+budget:
 
 ```
 2 min   ~400 words     the default — aim here first
@@ -288,16 +344,10 @@ close. That's the whole budget. Pick the three things worth saying and drop
 the rest — `home-server-on-512mb` lost its NAS internals, the 500 mA note
 and a Claude Code section to fit, and reads better for it.
 
-Count before you publish, and set the meta line to the real number. A padded
-or shaved figure is the sort of small lie the rest of this site doesn't tell:
-
-```bash
-python3 -c "
-import re,pathlib
-b=re.search(r'<div class=\"post in\"[^>]*>([\s\S]*?)\n  </div>',
-            pathlib.Path('blog/<slug>.html').read_text()).group(1)
-w=len(re.sub(r'<[^>]+>',' ',b).split()); print(w,'words ->',max(1,round(w/200)),'min')"
-```
+`python3 tools/build-blog.py` prints the word count and minutes for every
+post, and **refuses to build anything over 1000 words** — the ceiling is no
+longer advisory. If the build stops you, cut; don't reach for the constant
+in `tools/build-blog.py`.
 
 **When you land over 1000 words, cut in this order:**
 
@@ -334,7 +384,9 @@ and self-aware). Post-specific:
 
 ## Verify before reporting
 
-Render and **read the screenshot** — desktop and narrow:
+Build first — `python3 tools/build-blog.py` — then render and **read the
+screenshot**, desktop and narrow. `git diff` after a build is a good cheap
+check on its own: the output is stable, so the diff is exactly your change.
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
@@ -347,9 +399,10 @@ Post pages are ordinary scrolling documents, so unlike the deck they
 screenshot directly — no test-copy trick needed.
 
 For mobile, headless clamps the window to 500px, so constrain
-`body { width: 390px }` in a scratch copy — and rewrite **both** sheet
-hrefs (`../style.css` and `post.css`) to absolute `file://` paths, or they
-silently won't load and you'll screenshot an unstyled page.
+`body { width: 390px }` in a scratch copy — and rewrite **both** sheet hrefs
+(`../style.css` and `post.css`) **and the font preload** to absolute
+`file://` paths, or they silently won't load and you'll screenshot an
+unstyled page in the fallback monospace.
 
 Then confirm the page body itself doesn't overflow while wide `<pre>` blocks
 scroll internally — that split is the thing to check. Measured on
@@ -357,21 +410,28 @@ scroll internally — that split is the thing to check. Measured on
 457. Body at exactly 390 with `pre` scrolling past it is the pass condition;
 a body wider than 390 is the failure.
 
-Also confirm: the new `<li>` links to a file that exists, the slug matches
-in all three places, and the wip `--i` values were bumped.
+Then confirm `python3 tools/build-blog.py --check` is clean, so the Pages
+workflow won't reject the deploy. The old checklist here — that the `<li>`
+points at a file that exists, that the slug matches in three places, that
+`--i` was renumbered — is all now structurally impossible to get wrong.
 
 ## Don't
 
+- Don't edit `blog/<slug>.html`. It is generated; the next build discards
+  your change and CI fails the deploy before that. Edit the `.md`.
 - Don't put anything post-specific in `style.css` — it's shared with the
-  deck. Rules shared by posts go in `blog/post.css`; a post's own `<style>`
-  is for genuinely one-off styling and is normally absent.
+  deck. Rules shared by posts go in `blog/post.css`. A `.md` has no slot for
+  CSS at all, which is the point.
 - Don't add `scroll-snap-type` to a post, ever — not in the post, not in
   `post.css`. See `portfolio-conventions`.
 - Don't re-inline the favicon as a data-URI. Posts link `../favicon.svg`;
   inlining it is what let the mark drift last time.
-- Don't add a dependency for markdown rendering, syntax highlighting, dates,
-  or an RSS builder. The whole site is dependency-free on purpose; a
-  highlighter would be the first script on the page.
+- Don't add a dependency. The generator is Python 3 stdlib and the *site*
+  depends on nothing at all — the HTML is committed and served as-is. A
+  runtime markdown renderer, a syntax highlighter or an RSS builder that has
+  to run before the page works would cross the line the build step doesn't.
+  If the markdown subset can't express something, use a raw HTML block; if
+  that keeps happening, widen the parser rather than importing one.
 - Don't add horizontal rules between sections — the site's no-divider rule
   applies inside posts too. Blank space separates blocks.
 - Don't commit or push unless asked. Pages deploys off `main`, so a push is
