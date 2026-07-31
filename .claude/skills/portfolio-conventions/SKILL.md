@@ -6,8 +6,8 @@ description: Design system, content voice, and animation conventions for MKS's m
 # mks.sh portfolio conventions
 
 Static terminal-styled site: `index.html` is a scroll-snap deck, **one**
-page (`blog/post.html`) renders every long-form post in the browser from
-`blog/posts/*.md` (July 2026 — there are no per-post HTML files, and the
+page (`blogs/index.html`) renders every long-form post in the browser from
+`blogs/*.md` (July 2026 — there are no per-post HTML files, and the
 owner asked for it that way), `style.css` is the shared vocabulary. Everything —
 header, whoami, project list, now-reading, footer, posts — reads like one
 continuous shell session. Every design and copy decision should reinforce
@@ -28,38 +28,38 @@ Three layers, narrowest scope last:
 - **`deck.css`** — deck-only: `.screen` + snap, `.mac` and every `.app-*`,
   `.projects`, `.hint`, the mac's mobile height tiers. Linked by
   `index.html` and **nothing else**; `deck.js` is its behavioural twin.
-- **`blog/post.css`** — everything the post page needs and the deck doesn't:
-  `.wrap`, `.post` prose rhythm, headings, `pre`/`code`, tables, `.hero`,
+- **`blogs/blog.css`** — everything the post page needs and the deck doesn't:
+  `.wrap`, `.blog` prose rhythm, headings, `pre`/`code`, tables, `.hero`,
   `.eof`, and the `body:not(.ready)` gate that holds the entrance print
-  until the fetched body lands. `blog/post.html` links it as `post.css`.
+  until the fetched body lands. `blogs/index.html` links it as `blog.css`.
 - **A page's inline `<style>`** — index.html keeps only the `<noscript>`
   block, which has to be inline. **Posts have none and cannot have one** —
   the `.md` source has no slot for it. That's deliberate.
 
 **The one rule that breaks everything if violated:** `scroll-snap-type: y
 mandatory` stays at the top of `deck.css`. Never move it to `style.css` *or*
-`blog/post.css` — either would apply to every post and destroy long-form
+`blogs/blog.css` — either would apply to every post and destroy long-form
 scrolling. What makes `deck.css` safe is that no post links it; keep it that
 way, and keep the comment saying so.
 
-Load order is `style.css` → `deck.css`/`post.css`, so each layer can override
+Load order is `style.css` → `deck.css`/`blog.css`, so each layer can override
 the one before it at equal specificity without `!important`.
 
 **Why `deck.css`/`deck.js` exist (July 2026):** `index.html` had become 56KB
 — 744 lines of CSS and 244 of JS around ~290 lines of markup. Same reasoning
-as `post.css`: the file you open should be the thing you're editing. It's now
+as `blog.css`: the file you open should be the thing you're editing. It's now
 19KB of markup.
 
-**Why `post.css` exists (July 2026):** the first two posts and the template
+**Why `blog.css` exists (July 2026):** the first two posts and the template
 each carried a byte-identical ~116-line inline block. At the owner's ~10-post
 cap that is ~1,100 lines of copy-paste with no shared source — the exact
 drift `style.css` was created to prevent. If you find yourself pasting CSS
-into a new post, it belongs in `post.css` instead.
+into a new post, it belongs in `blog.css` instead.
 
 ## One asset, one file
 
 `favicon.svg` at the repo root is the single source for the alien mark —
-`index.html` links `favicon.svg`, `blog/post.html` links `../favicon.svg`.
+`index.html` links `favicon.svg`, `blogs/index.html` links `../favicon.svg`.
 
 This is not a hypothetical rule. Both used to inline the same data-URI
 separately and **had already drifted**: the landing's copy carried a
@@ -82,14 +82,14 @@ don't "fix" it by pinning the wordmark too.
 **If the tab icon looks like the OLD colour, it's cache, not code.**
 Browsers cache favicons aggressively and ignore a normal reload. The icon
 links carry a `?v=N` query for exactly this reason — bump N whenever
-`favicon.svg` changes colour, in `index.html` **and** in `blog/post.html`.
+`favicon.svg` changes colour, in `index.html` **and** in `blogs/index.html`.
 Two places, not seven.
 
 **The header wordmark alien must stay inline** — it fills from
 `var(--accent)`/`var(--bg)`, so it has to live in the page's cascade; an
 `<img>` or a cross-document `<use>` can't see those. It had drifted before
 (landing had 3 paths, every post had 2 — missing the highlight stroke).
-There are now exactly **two** copies — `index.html` and `blog/post.html` —
+There are now exactly **two** copies — `index.html` and `blogs/index.html` —
 because every post is served by that one page. When you touch the alien,
 change both and `grep -c '<path'` to confirm they match. Hero graphics inside posts also use `var(--accent)` — they're
 illustrations, not the mark, and should follow the theme.
@@ -100,18 +100,18 @@ illustrations, not the mark, and should follow the theme.
 it covers the markdown format, front matter, read-time and the publish step.
 What follows is only how the blog wires into the deck.
 
-**The `#blog` list markup is generated.** It sits between
-`<!-- BUILD:blog-list … -->` markers in `index.html`, written by
-`tools/build-blog.py` from the posts' front matter, along with the
-`.segs`/`.tcount` indicator between the `BUILD:blog-tbar` markers. Change how
-the list *looks* in `render_list()` in that script, not in `index.html` —
-edits inside the markers are overwritten. Everything outside them is yours.
+**The `#blog` list is drawn at run time, not written into `index.html`.**
+`deck.js` reads `blogs/blogs.txt` (slugs in display order — the pin is the
+first line), fetches each post's front matter through `blogs/markdown.js`,
+and builds the `.bpage` groups plus the `.segs`/`.tcount` indicator. Change
+how the list *looks* in `listEntry()`/`drawBlogList()` in `deck.js`; the
+markup is not in `index.html` to edit.
 
-That script exists **only** for this list: a browser can't enumerate a
-directory over http, so the slugs, titles, dates and read-times have to be
-baked in. Posts themselves are not generated.
+This is why `#blogtrack` starts empty and `tracks.blog` is null until the
+fetch resolves — `makeTrack` measures children, so it cannot run before the
+pages exist. If you touch that ordering, keep the late build.
 
-**Post links are `blog/post.html?p=<slug>`.** They used to be
+**Post links are `blogs/?p=<slug>`.** They used to be
 `blog/<slug>.html`, and those URLs were shared, so `404.html` — a router
 with no chrome of its own — catches the old shape and redirects. Keep it.
 
@@ -125,7 +125,7 @@ with no chrome of its own — catches the old shape and redirects. Keep it.
   Three things must agree or the nav silently lies: DOM order of `.screen`,
   the order of `.rail` links (the observer maps them by index, not by
   href), and the window numbers in the labels. Posts' own two-window bar
-  hardcodes `1:blogs` — it lives in `blog/post.html`, so renumber it there
+  hardcodes `1:blogs` — it lives in `blogs/index.html`, so renumber it there
   once and every post follows.
 - **The wip line is gone** (owner's call, July 2026). `$ ls
   ~/weekend-hacks/wip` and its "still a few unfinished weekend projects —
@@ -145,7 +145,7 @@ with no chrome of its own — catches the old shape and redirects. Keep it.
   named for its first command — owner's call, July 2026) still points at
   `#home`; the label and the anchor are allowed to differ, and the same
   goes for the `blogs` labels below.
-- **The visible label is `blogs`, the directory is still `blog/`** (owner,
+- **The visible label is `blogs`, the directory is still `blogs/`** (owner,
   July 2026). `$ ls ~/blogs`, `$ less ~/blogs/<slug>.md`, `$ cd ~/blogs`
   and the `1:blogs` window are all display text; the folder, the `href`s
   and the `#blog` anchor id were deliberately left alone because renaming
@@ -158,7 +158,7 @@ with no chrome of its own — catches the old shape and redirects. Keep it.
   pager you'd actually use on long text and it signals "this one scrolls."
 - Post pages carry **no mac** and no snap — just the wordmark linking back to
   `../index.html#blog`, and a two-window tmux bar (`0:whoami`, `1:blogs`).
-- Post bodies fade in as **one block** (`.post.in`), not line-by-line. The
+- Post bodies fade in as **one block** (`.blog.in`), not line-by-line. The
   `--i` print sequence is for terminal output; a 4-minute read printing
   55ms per line would be unusable. Only the header/prompt/title/meta use it,
   and `render.js` assigns those numbers at run time across whichever of the

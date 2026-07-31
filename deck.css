@@ -1,16 +1,16 @@
 /* ── deck-only CSS ────────────────────────────────────────────────────
    Linked by index.html and by NOTHING else. Layers narrowest-scope-last:
    style.css (shared by both kinds of page) → this file (the deck) or
-   blog/post.css (posts) → a page's own inline <style>.
+   blogs/blog.css (posts) → a page's own inline <style>.
 
    ⚠ `scroll-snap-type: y mandatory` lives here, at the top. It must never
-   move into style.css or blog/post.css — either would apply it to every
+   move into style.css or blogs/blog.css — either would apply it to every
    post and destroy long-form scrolling. It is safe here precisely because
    a post never links this file.
 
    This used to be a 744-line inline <style> in index.html, which put ~1000
    lines of CSS and JS around ~290 lines of markup in one 56KB file. Split
-   out for the same reason post.css was: so the thing you are editing is
+   out for the same reason blog.css was: so the thing you are editing is
    the thing you opened. ─────────────────────────────────────────────── */
   /* ── deck-only layout. Shared tokens + terminal grammar live in
      style.css; everything below is unique to this page. ───────── */

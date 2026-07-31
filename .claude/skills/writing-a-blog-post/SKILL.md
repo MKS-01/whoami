@@ -1,24 +1,24 @@
 ---
 name: writing-a-blog-post
-description: How to write and publish a post on mks.sh — the blog/posts/*.md format and front matter, the less(1) conceit, the markdown subset, read-time, and the one-command publish step. Use whenever adding, drafting, editing, or removing a blog post.
+description: How to write and publish a post on mks.sh — the blogs/*.md format and front matter, the less(1) conceit, the markdown subset, read-time, and the one-command publish step. Use whenever adding, drafting, editing, or removing a blog post.
 ---
 
 # Writing a post for mks.sh
 
-A post is one markdown file: `blog/posts/<slug>.md`, front matter plus prose.
-**There is no per-post HTML file** — `blog/post.html` is the single page that
-serves every post, rendering `?p=<slug>` in the browser via `blog/render.js`
+A post is one markdown file: `blogs/<slug>.md`, front matter plus prose.
+**There is no per-post HTML file** — `blogs/index.html` is the single page that
+serves every post, rendering `?p=<slug>` in the browser via `blogs/render.js`
 (owner's call, July 2026: *"single html template for blog and to avoid
 multiple blog html, post format in markdown"*). Adding a post never adds an
 HTML file; don't create one.
 
-`python3 tools/build-blog.py` does not touch posts. Its only job is the list
+`bun run check` does not touch posts. Its only job is the list
 on the landing page, because nothing in a browser can enumerate a directory.
 
 Two stylesheets do all the work — `../style.css` supplies every token and the
-terminal grammar, `post.css` supplies the prose rhythm. There is nowhere in
+terminal grammar, `blog.css` supplies the prose rhythm. There is nowhere in
 a `.md` to put CSS, on purpose: if you want a rule, it belongs in
-`blog/post.css` where every post gets it.
+`blogs/blog.css` where every post gets it.
 
 Read **`portfolio-conventions`** first for the design system and the site's
 voice rules — this skill only covers what's specific to posts.
@@ -51,13 +51,17 @@ labelled as a draft, and deleted unread for exactly this reason.
 ## Publishing = 1 file + 1 command
 
 ```bash
-cp blog/posts/_template.md blog/posts/<slug>.md
-$EDITOR blog/posts/<slug>.md
-python3 tools/build-blog.py          # refreshes the landing list only
+cp blogs/_template.md blogs/<slug>.md
+$EDITOR blogs/<slug>.md
+add its slug to blogs/blogs.txt   # that is the whole publish step
 ```
 
-The post is live at `blog/post.html?p=<slug>` the moment the `.md` exists.
-Removing one is `rm blog/posts/<slug>.md` plus the same command.
+Posts live **flat in `blogs/`**, beside the page that renders them — there is
+no `posts/` subdirectory, and the folder matches the `~/blogs` the site has
+always displayed.
+
+The post is live at `blogs/?p=<slug>` the moment the `.md` exists.
+Removing one is `rm blogs/<slug>.md` plus the same command.
 
 Front matter:
 
@@ -86,9 +90,9 @@ share card, one is the terse `ls -l` column. Don't collapse them.
   three-per-`.bpage` balance, and `.segs`/`.tcount` when a page opens or
   closes.
 
-⚠️ Read time is computed **twice** — `readTime()` in `blog/render.js` for the
-page, `word_count()` in `tools/build-blog.py` for the list. Same formula.
-Touch one and you must touch the other.
+Read time comes from `readTime()` in `blogs/markdown.js`, which both the
+post page and the landing list import — one implementation, so the two can
+no longer disagree. Don't fork it.
 
 (There is no longer a wip line under the list — removed July 2026; don't
 re-add a "coming soon" placeholder.)
@@ -155,7 +159,7 @@ but the 2-3 line open and the short close hold for every post.
 
 ## Anatomy of a post page
 
-Fixed scaffold, in order. It lives in `blog/post.html` — one page for all
+Fixed scaffold, in order. It lives in `blogs/index.html` — one page for all
 posts — and you get it for free. Change it there and every post changes;
 don't restructure it:
 
@@ -167,7 +171,7 @@ written YYYY-MM-DD · N min                            --i:3
 $ git clone github.com/MKS-01/<repo>       optional   --i:4
 $ open <demo url>                          optional
 [hero <figure>]                            optional
-.post  ← the whole body, ONE fade
+.blog  ← the whole body, ONE fade
 (END)
 $ cd ~/blogs
 tmux bar: [mks] 0:whoami 1:blogs*
@@ -175,7 +179,7 @@ tmux bar: [mks] 0:whoami 1:blogs*
 
 The optional lines shift everything after them, which is why `render.js`
 assigns `--i` at run time over the visible steps only. The entrance print is
-held by `body:not(.ready)` in `post.css` until the fetched body is in the
+held by `body:not(.ready)` in `blog.css` until the fetched body is in the
 DOM — without that every line animates while still empty. The alien SVG in
 that header is now one of only two copies site-wide (here and
 `index.html`).
@@ -246,7 +250,7 @@ ordinary prose, you're fighting the format.
 A post may open with an inline SVG diagram between the meta line and the
 body. Write it as a **raw HTML block at the very top of the markdown**,
 before any prose, as `<figure class="hero">` with a `<figcaption>` — the
-generator hoists it out of `.post`, adds the `in` class and its `--i`, and
+generator hoists it out of `.blog`, adds the `in` class and its `--i`, and
 leaves its words out of the read time. Rules:
 
 - **Draw the architecture, not decoration.** The owner approved a hero for
@@ -350,10 +354,9 @@ close. That's the whole budget. Pick the three things worth saying and drop
 the rest — `home-server-on-512mb` lost its NAS internals, the 500 mA note
 and a Claude Code section to fit, and reads better for it.
 
-`python3 tools/build-blog.py` prints the word count and minutes for every
-post, and **refuses to build anything over 1000 words** — the ceiling is no
-longer advisory. If the build stops you, cut; don't reach for the constant
-in `tools/build-blog.py`.
+Nothing enforces the ceiling any more — the generator that used to refuse
+an over-length post is gone. Count before you publish, and keep to the
+budget yourself; the numbers above are the whole story.
 
 **When you land over 1000 words, cut in this order:**
 
@@ -395,7 +398,7 @@ the page shows its "can't load" message and you'll think you broke it. Serve
 the repo, then screenshot over localhost:
 
 ```bash
-python3 -m http.server 8899
+bun run dev     # http://localhost:3000
 ```
 
 Then render and **read the screenshot**, desktop and narrow.
@@ -404,7 +407,7 @@ Then render and **read the screenshot**, desktop and narrow.
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless --disable-gpu --virtual-time-budget=2500 \
   --screenshot=/tmp/post.png --window-size=1400,1000 --hide-scrollbars \
-  "http://localhost:8899/blog/post.html?p=<slug>"
+  "http://localhost:3000/blogs/?p=<slug>"
 ```
 
 Post pages are ordinary scrolling documents, so unlike the deck they
@@ -420,23 +423,23 @@ scroll internally — that split is the thing to check. Measured on
 457. Body at exactly 390 with `pre` scrolling past it is the pass condition;
 a body wider than 390 is the failure.
 
-Then confirm `python3 tools/build-blog.py --check` is clean, so the Pages
-workflow won't reject the deploy. The old checklist here — that the `<li>`
+Then confirm `bun run check` is clean, so the Pages workflow won't reject
+the deploy. The old checklist here — that the `<li>`
 points at a file that exists, that the slug matches in three places, that
 `--i` was renumbered — is all now structurally impossible to get wrong.
 
 ## Don't
 
 - Don't create a `blog/<slug>.html`. There is one post page and it is
-  `blog/post.html`; per-post files are exactly what the owner asked to be
+  `blogs/index.html`; per-post files are exactly what the owner asked to be
   rid of. Edit the `.md`.
 - Don't delete `404.html`. Posts used to live at `/blog/<slug>.html` and
   those links were shared; it is the only thing keeping them working.
 - Don't put anything post-specific in `style.css` — it's shared with the
-  deck. Rules shared by posts go in `blog/post.css`. A `.md` has no slot for
+  deck. Rules shared by posts go in `blogs/blog.css`. A `.md` has no slot for
   CSS at all, which is the point.
 - Don't add `scroll-snap-type` to a post, ever — not in the post, not in
-  `post.css`. See `portfolio-conventions`.
+  `blog.css`. See `portfolio-conventions`.
 - Don't re-inline the favicon as a data-URI. Posts link `../favicon.svg`;
   inlining it is what let the mark drift last time.
 - Don't add a dependency. The generator is Python 3 stdlib and the *site*

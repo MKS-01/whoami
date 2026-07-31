@@ -26,13 +26,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # The blog's HTML is generated from blog/posts/*.md and committed, so
-      # Pages can keep serving plain static files. That only stays true if the
-      # two never diverge — this fails the deploy on a hand-edited blog page
-      # or a .md whose rebuild was forgotten, rather than letting the site go
-      # out of sync with its source. It writes nothing.
-      - name: Verify the blog matches its markdown
-        run: python3 tools/build-blog.py --check
+      # Nothing is generated, so there is no build — but every script ships
+      # unbundled to the browser with no compile step to fail first, and a
+      # syntax error would reach visitors as a silently dead page. Catch it
+      # here instead. Installs nothing: the repo has no dependencies.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Parse every script
+        run: bun run check
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

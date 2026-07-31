@@ -3,95 +3,95 @@
    on <html> synchronously, before first paint, so a non-default accent
    doesn't flash amber on every navigation.
 
-   The swatch markup is injected rather than pasted into index.html and each
-   blog/*.html — same reasoning as favicon.svg and post.css: five hand-kept
+   The swatch markup is injected rather than pasted into index.html and
+   blogs/index.html — same reasoning as favicon.svg and blog.css: hand-kept
    copies of the same block is how the alien mark drifted. No-JS visitors
    simply get the default theme and no toggle, which is the correct
    degradation for a preference control.
 
    Token definitions live in style.css under :root[data-theme="…"]. */
-(function () {
-  var THEMES = [
+(() => {
+  const THEMES = [
     { id: "phosphor", label: "phosphor", swatch: "#4f9a60", bg: "#070807" },
     { id: "amber",    label: "amber",    swatch: "#cf7a26", bg: "#080706" },
     { id: "classic",  label: "classic",  swatch: "#6191c9", bg: "#0a0d11" }
   ];
-  var DEFAULT = "phosphor";   /* the bare :root block in style.css */
-  var KEY = "mks-accent";
-  var root = document.documentElement;
+  const DEFAULT = "phosphor";   /* the bare :root block in style.css */
+  const KEY = "mks-accent";
+  const root = document.documentElement;
 
-  function stored() {
-    try { return localStorage.getItem(KEY); } catch (e) { return null; }
-  }
-  function known(id) {
-    return THEMES.some(function (t) { return t.id === id; });
-  }
+  /* localStorage throws outright in some privacy modes, so every touch of
+     it is guarded — a blocked preference must not take the page with it */
+  const stored = () => {
+    try { return localStorage.getItem(KEY); } catch { return null; }
+  };
+  const known = (id) => THEMES.some((t) => t.id === id);
 
   /* the default has no data-theme block — leave the attribute off entirely
      for it so :root alone styles the page */
-  var current = known(stored()) ? stored() : DEFAULT;
+  let current = known(stored()) ? stored() : DEFAULT;
   if (current !== DEFAULT) root.dataset.theme = current;
 
   /* <meta name="theme-color"> paints the browser chrome on mobile. Unlike
      favicon.svg it CAN follow the toggle — it is a real element, so the same
      switch that swaps the tokens keeps it honest. Its hardcoded value in the
      markup is the default theme's --bg, for the pre-JS frame and for no-JS. */
-  function paintChrome(id) {
-    var meta = document.querySelector('meta[name="theme-color"]');
-    var theme = THEMES.filter(function (t) { return t.id === id; })[0];
+  const paintChrome = (id) => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const theme = THEMES.find((t) => t.id === id);
     if (meta && theme) meta.setAttribute("content", theme.bg);
-  }
+  };
 
-  function build() {
-    var rail = document.querySelector(".rail");
+  const build = () => {
+    const rail = document.querySelector(".rail");
     if (!rail) return;
 
-    var group = document.createElement("div");
+    const group = document.createElement("div");
     group.className = "swatches";
     group.setAttribute("role", "group");
     group.setAttribute("aria-label", "accent colour");
 
-    var buttons = THEMES.map(function (t) {
-      var b = document.createElement("button");
+    const apply = (id) => {
+      current = id;
+      if (id === DEFAULT) delete root.dataset.theme;
+      else root.dataset.theme = id;
+      paintChrome(id);
+      try { localStorage.setItem(KEY, id); } catch { /* private mode */ }
+      buttons.forEach(({ id: themeId, el }) => {
+        el.setAttribute("aria-pressed", String(themeId === id));
+      });
+    };
+
+    const buttons = THEMES.map((t) => {
+      const b = document.createElement("button");
       b.type = "button";
       b.title = t.label;
       b.setAttribute("aria-label", t.label);
       b.setAttribute("aria-pressed", String(t.id === current));
       b.style.setProperty("--sw", t.swatch);
       b.appendChild(document.createElement("i"));
-      b.addEventListener("click", function () { apply(t.id); });
+      b.addEventListener("click", () => apply(t.id));
       group.appendChild(b);
       return { id: t.id, el: b };
     });
 
-    function apply(id) {
-      current = id;
-      if (id === DEFAULT) delete root.dataset.theme;
-      else root.dataset.theme = id;
-      paintChrome(id);
-      try { localStorage.setItem(KEY, id); } catch (e) {}
-      buttons.forEach(function (b) {
-        b.el.setAttribute("aria-pressed", String(b.id === id));
-      });
-    }
-
     rail.appendChild(group);
-  }
+  };
 
   /* The © year in the tmux bar's right corner. Two lines, and they used to
-     sit at the bottom of index.html and of all five posts plus the template —
-     seven copies of the same script. Every page already loads this file, so
-     it belongs here for the same reason the swatches do. */
-  function stampYear() {
-    var yr = document.getElementById("year");
+     sit at the bottom of index.html and of every post — seven copies of the
+     same script. Every page already loads this file, so it belongs here for
+     the same reason the swatches do. */
+  const stampYear = () => {
+    const yr = document.getElementById("year");
     if (yr) yr.textContent = new Date().getFullYear();
-  }
+  };
 
-  function ready() {
+  const ready = () => {
     build();
     stampYear();
     paintChrome(current);
-  }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", ready);

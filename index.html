@@ -149,54 +149,14 @@
       <p class="prompt in" style="--i:0"><span class="cmd">ls ~/blogs</span></p>
       <div class="blogtrack" id="blogtrack" tabindex="0" role="group"
            aria-roledescription="carousel" aria-label="blog posts">
-        <!-- BUILD:blog-list start — generated from blog/posts/*.md by
-             tools/build-blog.py. Add a post by adding its .md and rebuilding;
-             edits between these markers are overwritten. -->
-        <div class="bpage">
-        <ul class="output projects">
-          <li class="in" style="--i:1">
-            <a href="blog/post.html?p=why-i-built-readback">
-              <span class="name">why-i-built-readback</span>
-              <p class="desc">started as a voice agent — the reader is what was left<span class="meta">pinned <span class="sep">·</span> 2026-07-21 <span class="sep">·</span> 5 min</span></p>
-            </a>
-          </li>
-          <li class="in" style="--i:2">
-            <a href="blog/post.html?p=the-nas-rebuilt">
-              <span class="name">the-nas-rebuilt</span>
-              <p class="desc">it used to live in my head; now a script and an agent run it<span class="meta">2026-07-30 <span class="sep">·</span> 2 min</span></p>
-            </a>
-          </li>
-          <li class="in" style="--i:3">
-            <a href="blog/post.html?p=the-mesh-needed-two">
-              <span class="name">the-mesh-needed-two</span>
-              <p class="desc">a mesh needs two boards — so i built what one can do<span class="meta">2026-07-26 <span class="sep">·</span> 3 min</span></p>
-            </a>
-          </li>
-        </ul>
-        </div>
-        <div class="bpage">
-        <ul class="output projects">
-          <li class="in" style="--i:4">
-            <a href="blog/post.html?p=home-server-on-512mb">
-              <span class="name">home-server-on-512mb</span>
-              <p class="desc">what a $15 board runs, and how it fits together<span class="meta">2026-07-21 <span class="sep">·</span> 2 min</span></p>
-            </a>
-          </li>
-          <li class="in" style="--i:5">
-            <a href="blog/post.html?p=ble-recon-bettercap">
-              <span class="name">ble-recon-bettercap</span>
-              <p class="desc">three commands and a fitness band tells you everything<span class="meta">2020-06-24 <span class="sep">·</span> 2 min</span></p>
-            </a>
-          </li>
-        </ul>
-        </div>
-        <!-- BUILD:blog-list end -->
+        <!-- The post list is drawn by deck.js from blogs/blogs.txt plus each
+             post's front matter, on first reveal of this screen. Publishing
+             is a .md file and a line in that list — there is nothing to
+             generate and nothing here to hand-edit. -->
       </div>
       <div class="tbar">
-        <!-- BUILD:blog-tbar start — the page count follows the list above. -->
-        <span class="segs" aria-hidden="true"><i><b></b></i><i><b></b></i></span>
-        <span class="tcount" aria-live="polite">1/2</span>
-        <!-- BUILD:blog-tbar end -->
+        <span class="segs" aria-hidden="true"></span>
+        <span class="tcount" aria-live="polite"></span>
       </div>
       </div>
     </div>
@@ -271,36 +231,14 @@
 
 
 
-  <!-- ── blog index ───────────────────────────────────────────────────
-       ADD A POST = 2 steps:
-         1. copy blog/_template.html → blog/<slug>.html, fill it in
-         2. paste the <li> below into the FIRST .bpage, NEWEST FIRST, then
-            push the --i of every <li> after it up by one so the print order
-            stays sequential
+  <!-- ── adding a post ───────────────────────────────────────────────
+       Write blogs/<slug>.md and add its slug to blogs/blogs.txt, in the
+       order you want it listed — the first line is the pinned one. That's
+       the whole step. deck.js draws the list above from those files, so
+       the title, date, blurb and read time have exactly one home (the
+       post's own front matter) and there is nothing here to keep in sync.
 
-       EXCEPTION: why-i-built-readback is PINNED to the top and stays there
-       regardless of date — that's why its meta line reads `pinned · date ·
-       N min` while every other entry starts with the date. A new post goes
-       BELOW it, not above. Don't "fix" the out-of-order dates by resorting.
-
-       <li class="in" style="--i:N">
-         <a href="blog/<slug>.html">
-           <span class="name"><slug></span>
-           <p class="desc">one dry line, same shape as a project<span
-             class="meta">YYYY-MM-DD <span class="sep">·</span> N min</span></p>
-         </a>
-       </li>
-
-       THREE POSTS PER .bpage. Adding one pushes the last <li> of each page
-       down into the next, so re-balance the pages after inserting — and if
-       that opens a new .bpage, add a matching <i><b></b></i> to .segs and
-       fix the `N/M` in .tcount. The JS reads the page count off the DOM, so
-       those two are the only hand-kept copies.
-
-       The date and read-time must match the post's own `written … · N min`
-       meta line — they're two hand-kept copies, so change both together.
-
-       Keep it to ~10 posts and slugs to ≤23 chars — longer slugs wrap the
+       Keep it to ~10 posts and slugs to <=23 chars — longer slugs wrap the
        name column.
   ── -->
 </main>
@@ -312,6 +250,6 @@
   <a href="#projects">2:projects<span class="pane" data-track="mantrack">.1</span></a>
 </nav>
 <div class="site-foot" aria-hidden="true">© <span id="year">2026</span> mks</div>
-<script src="deck.js"></script>
+<script src="deck.js" type="module"></script>
 </body>
 </html>
