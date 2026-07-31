@@ -10,7 +10,35 @@
 
    NOTE: `scroll-snap-type` is deliberately NOT here. It belongs to the deck
    only — a blog post is long-form scrolling text and mandatory snap would
-   fight it. index.html sets it inline. Don't move it into this file. */
+   fight it. deck.css sets it. Don't move it into this file. */
+
+/* ── the font, served from this repo ─────────────────
+   Was three render-blocking requests to Google on every page (two
+   preconnects and a stylesheet, before the font itself even started). One
+   local file instead: no third party in the critical path, no third party
+   told who read which post, and the page renders the same offline and over
+   file:// as it does deployed.
+
+   ONE subset, `latin` — the same variable woff2 Google was serving, so the
+   rendering is unchanged. The site's other glyphs (→ ✔ ▲ ▶ ☕) are outside
+   every subset Google ships for this family, so they already fell through
+   to the system monospace and still do. Don't add subsets for them; the
+   font simply doesn't carry them.
+
+   Variable, so 400/500/600 all come out of the one file — don't split it
+   back into static weights. SIL OFL 1.1: fonts/OFL.txt ships with it, and
+   has to. */
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("fonts/fira-code-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+                 U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+                 U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF,
+                 U+FFFD;
+}
 
 /* ── phosphor: the default palette (July 2026) ──────
    The site ran cool GitHub-blue on #0d1117 until this pass; it is now a
