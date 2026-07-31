@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- GitHub Pages serves this for any path it can't find under the site.
+
+     Its one job is a redirect, so it deliberately has NO chrome of its own.
+     Posts used to live at /blog/<slug>.html, one file each; they render from
+     /blog/post.html now, so those URLs are gone — and links to them have been
+     shared. This catches them and hands the slug to the renderer.
+
+     A third hand-kept copy of the header would be exactly the duplication
+     favicon.svg and post.html exist to prevent, so anything that is not a
+     legacy post URL bounces to the landing page rather than drawing its own. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mks.sh</title>
+<meta name="robots" content="noindex">
+<script>
+  (function () {
+    var post = /\/blog\/([A-Za-z0-9-]+)\.html$/.exec(location.pathname);
+    location.replace(post && post[1] !== "post"
+      ? "/whoami/blog/post.html?p=" + post[1]
+      : "/whoami/");
+  })();
+</script>
+<meta http-equiv="refresh" content="0; url=/whoami/">
+</head>
+<body></body>
+</html>

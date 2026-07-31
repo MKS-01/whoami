@@ -5,10 +5,10 @@ description: Design system, content voice, and animation conventions for MKS's m
 
 # mks.sh portfolio conventions
 
-Static terminal-styled site: `index.html` is a scroll-snap deck, `blog/*.html`
-are long-form posts **generated from `blog/posts/*.md`** by
-`tools/build-blog.py` (July 2026 — never hand-edit one), `style.css` is the
-shared vocabulary. Everything —
+Static terminal-styled site: `index.html` is a scroll-snap deck, **one**
+page (`blog/post.html`) renders every long-form post in the browser from
+`blog/posts/*.md` (July 2026 — there are no per-post HTML files, and the
+owner asked for it that way), `style.css` is the shared vocabulary. Everything —
 header, whoami, project list, now-reading, footer, posts — reads like one
 continuous shell session. Every design and copy decision should reinforce
 that illusion, not break it.
@@ -28,9 +28,10 @@ Three layers, narrowest scope last:
 - **`deck.css`** — deck-only: `.screen` + snap, `.mac` and every `.app-*`,
   `.projects`, `.hint`, the mac's mobile height tiers. Linked by
   `index.html` and **nothing else**; `deck.js` is its behavioural twin.
-- **`blog/post.css`** — shared by every post, meaningless on the deck:
-  `.wrap`, `.post` prose rhythm, headings, `pre`/`code`, tables,
-  `.hero`, `.eof`. Posts link it as `href="post.css"` (sibling file).
+- **`blog/post.css`** — everything the post page needs and the deck doesn't:
+  `.wrap`, `.post` prose rhythm, headings, `pre`/`code`, tables, `.hero`,
+  `.eof`, and the `body:not(.ready)` gate that holds the entrance print
+  until the fetched body lands. `blog/post.html` links it as `post.css`.
 - **A page's inline `<style>`** — index.html keeps only the `<noscript>`
   block, which has to be inline. **Posts have none and cannot have one** —
   the `.md` source has no slot for it. That's deliberate.
@@ -58,7 +59,7 @@ into a new post, it belongs in `post.css` instead.
 ## One asset, one file
 
 `favicon.svg` at the repo root is the single source for the alien mark —
-`index.html` links `favicon.svg`, posts link `../favicon.svg`.
+`index.html` links `favicon.svg`, `blog/post.html` links `../favicon.svg`.
 
 This is not a hypothetical rule. Both used to inline the same data-URI
 separately and **had already drifted**: the landing's copy carried a
@@ -81,17 +82,16 @@ don't "fix" it by pinning the wordmark too.
 **If the tab icon looks like the OLD colour, it's cache, not code.**
 Browsers cache favicons aggressively and ignore a normal reload. The icon
 links carry a `?v=N` query for exactly this reason — bump N whenever
-`favicon.svg` changes colour, in `index.html` **and** in
-`tools/post-template.html`, then rebuild. Two places now, not seven.
+`favicon.svg` changes colour, in `index.html` **and** in `blog/post.html`.
+Two places, not seven.
 
 **The header wordmark alien must stay inline** — it fills from
 `var(--accent)`/`var(--bg)`, so it has to live in the page's cascade; an
 `<img>` or a cross-document `<use>` can't see those. It had drifted before
 (landing had 3 paths, every post had 2 — missing the highlight stroke).
-There are now exactly **two** copies — `index.html` and
-`tools/post-template.html` — because every post gets it from the template.
-When you touch the alien, change both and `grep -c '<path'` to confirm they
-match. Hero graphics inside posts also use `var(--accent)` — they're
+There are now exactly **two** copies — `index.html` and `blog/post.html` —
+because every post is served by that one page. When you touch the alien,
+change both and `grep -c '<path'` to confirm they match. Hero graphics inside posts also use `var(--accent)` — they're
 illustrations, not the mark, and should follow the theme.
 
 ## Blog
@@ -107,6 +107,14 @@ What follows is only how the blog wires into the deck.
 the list *looks* in `render_list()` in that script, not in `index.html` —
 edits inside the markers are overwritten. Everything outside them is yours.
 
+That script exists **only** for this list: a browser can't enumerate a
+directory over http, so the slugs, titles, dates and read-times have to be
+baked in. Posts themselves are not generated.
+
+**Post links are `blog/post.html?p=<slug>`.** They used to be
+`blog/<slug>.html`, and those URLs were shared, so `404.html` — a router
+with no chrome of its own — catches the old shape and redirects. Keep it.
+
 - Post list is a deck screen (`#blog`, `$ ls ~/blogs`), reusing the exact
   `.projects` two-column shape as `ls ~/weekend-hacks`. Chosen over a
   separate `/blog/` index page — with the owner's ~10-post cap, an extra
@@ -117,8 +125,8 @@ edits inside the markers are overwritten. Everything outside them is yours.
   Three things must agree or the nav silently lies: DOM order of `.screen`,
   the order of `.rail` links (the observer maps them by index, not by
   href), and the window numbers in the labels. Posts' own two-window bar
-  hardcodes `1:blogs` — it lives in `tools/post-template.html`, so renumber
-  it there once and rebuild.
+  hardcodes `1:blogs` — it lives in `blog/post.html`, so renumber it there
+  once and every post follows.
 - **The wip line is gone** (owner's call, July 2026). `$ ls
   ~/weekend-hacks/wip` and its "still a few unfinished weekend projects —
   updating soon" line were briefly folded onto the blog screen after
@@ -152,7 +160,9 @@ edits inside the markers are overwritten. Everything outside them is yours.
   `../index.html#blog`, and a two-window tmux bar (`0:whoami`, `1:blogs`).
 - Post bodies fade in as **one block** (`.post.in`), not line-by-line. The
   `--i` print sequence is for terminal output; a 4-minute read printing
-  55ms per line would be unusable. Only the header/prompt/title/meta use it.
+  55ms per line would be unusable. Only the header/prompt/title/meta use it,
+  and `render.js` assigns those numbers at run time across whichever of the
+  optional lines (repo, demo, hero) that post actually has.
 - `#blog .projects .name` is widened to `12.5rem` — post slugs run longer
   than project names and wrapped mid-slug at the default `9.5rem`. Keep
   slugs ≤23 chars.

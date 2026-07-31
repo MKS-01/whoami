@@ -18,6 +18,13 @@
    ───────────────────────────────────────────────────────────────────── */
 
 /* ── page frame ─────────────────────────────────── */
+/* The post arrives by fetch, so hold the terminal print until render.js
+   has put it in the DOM and set each line's --i. Without this every line
+   animates while still empty and the print is over before the text lands.
+   render.js adds .ready on success AND on failure, so the error message
+   is never left invisible. */
+body:not(.ready) .in { animation-play-state: paused; }
+
 .wrap {
   max-width: 720px;
   margin: 0 auto;
