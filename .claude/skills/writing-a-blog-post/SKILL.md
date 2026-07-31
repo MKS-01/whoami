@@ -6,14 +6,14 @@ description: How to write and publish a post on mks.sh — the blog/posts/*.md f
 # Writing a post for mks.sh
 
 A post is one markdown file: `blog/posts/<slug>.md`, front matter plus prose.
-`python3 tools/build-blog.py` turns it into `blog/<slug>.html` — the whole
-page, chrome and all — and rewrites the post list on the landing page.
+**There is no per-post HTML file** — `blog/post.html` is the single page that
+serves every post, rendering `?p=<slug>` in the browser via `blog/render.js`
+(owner's call, July 2026: *"single html template for blog and to avoid
+multiple blog html, post format in markdown"*). Adding a post never adds an
+HTML file; don't create one.
 
-**`blog/*.html` is generated output. Never edit one** (July 2026; before that
-they were hand-written, and each carried ~55 lines of copy-pasted chrome plus
-a second copy of the post's own metadata). The next build overwrites your
-edit, and `build-blog.py --check` runs in the Pages workflow, so it fails the
-deploy first.
+`python3 tools/build-blog.py` does not touch posts. Its only job is the list
+on the landing page, because nothing in a browser can enumerate a directory.
 
 Two stylesheets do all the work — `../style.css` supplies every token and the
 terminal grammar, `post.css` supplies the prose rhythm. There is nowhere in
@@ -53,11 +53,11 @@ labelled as a draft, and deleted unread for exactly this reason.
 ```bash
 cp blog/posts/_template.md blog/posts/<slug>.md
 $EDITOR blog/posts/<slug>.md
-python3 tools/build-blog.py          # writes the page AND the landing list
+python3 tools/build-blog.py          # refreshes the landing list only
 ```
 
-Removing a post is `rm blog/posts/<slug>.md` and the same command — the
-generator deletes the orphaned page.
+The post is live at `blog/post.html?p=<slug>` the moment the `.md` exists.
+Removing one is `rm blog/posts/<slug>.md` plus the same command.
 
 Front matter:
 
@@ -85,6 +85,10 @@ share card, one is the terse `ls -l` column. Don't collapse them.
 - **the list** — entry markup, ordering (pinned first, then newest), the
   three-per-`.bpage` balance, and `.segs`/`.tcount` when a page opens or
   closes.
+
+⚠️ Read time is computed **twice** — `readTime()` in `blog/render.js` for the
+page, `word_count()` in `tools/build-blog.py` for the list. Same formula.
+Touch one and you must touch the other.
 
 (There is no longer a wip line under the list — removed July 2026; don't
 re-add a "coming soon" placeholder.)
@@ -151,9 +155,9 @@ but the 2-3 line open and the short close hold for every post.
 
 ## Anatomy of a post page
 
-Fixed scaffold, in order. It lives in `tools/post-template.html` — one copy
-for all posts — and you get it for free. Change it there and every post
-changes; don't restructure it:
+Fixed scaffold, in order. It lives in `blog/post.html` — one page for all
+posts — and you get it for free. Change it there and every post changes;
+don't restructure it:
 
 ```
 header (wordmark, links back to ../index.html#blog)   --i:0
@@ -169,10 +173,12 @@ $ cd ~/blogs
 tmux bar: [mks] 0:whoami 1:blogs*
 ```
 
-The optional lines shift everything after them, which is why `--i` is
-computed rather than typed. Note the alien SVG in that header is the one
-copy shared by every post now — the skill's warning about the mark drifting
-across files applies to `index.html` and the template, not to five posts.
+The optional lines shift everything after them, which is why `render.js`
+assigns `--i` at run time over the visible steps only. The entrance print is
+held by `body:not(.ready)` in `post.css` until the fetched body is in the
+DOM — without that every line animates while still empty. The alien SVG in
+that header is now one of only two copies site-wide (here and
+`index.html`).
 
 - The `less` framing is deliberate: `cat` is the landing's verb for short
   output, `man` belongs to projects, `less` is the pager you'd actually use
@@ -384,25 +390,29 @@ and self-aware). Post-specific:
 
 ## Verify before reporting
 
-Build first — `python3 tools/build-blog.py` — then render and **read the
-screenshot**, desktop and narrow. `git diff` after a build is a good cheap
-check on its own: the output is stable, so the diff is exactly your change.
+⚠️ **You cannot verify a post over `file://`.** `fetch` is blocked there, so
+the page shows its "can't load" message and you'll think you broke it. Serve
+the repo, then screenshot over localhost:
+
+```bash
+python3 -m http.server 8899
+```
+
+Then render and **read the screenshot**, desktop and narrow.
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless --disable-gpu --virtual-time-budget=2500 \
   --screenshot=/tmp/post.png --window-size=1400,1000 --hide-scrollbars \
-  "file:///Users/mks/Desktop/C0D3/whoami/blog/<slug>.html"
+  "http://localhost:8899/blog/post.html?p=<slug>"
 ```
 
 Post pages are ordinary scrolling documents, so unlike the deck they
-screenshot directly — no test-copy trick needed.
+screenshot directly — no test-copy trick needed, just the server.
 
-For mobile, headless clamps the window to 500px, so constrain
-`body { width: 390px }` in a scratch copy — and rewrite **both** sheet hrefs
-(`../style.css` and `post.css`) **and the font preload** to absolute
-`file://` paths, or they silently won't load and you'll screenshot an
-unstyled page in the fallback monospace.
+For mobile, headless clamps the window to 500px, so inject
+`body { width: 390px }` with an added `<style>` — served over localhost the
+sheets resolve normally, so no href rewriting is needed any more.
 
 Then confirm the page body itself doesn't overflow while wide `<pre>` blocks
 scroll internally — that split is the thing to check. Measured on
@@ -417,8 +427,11 @@ points at a file that exists, that the slug matches in three places, that
 
 ## Don't
 
-- Don't edit `blog/<slug>.html`. It is generated; the next build discards
-  your change and CI fails the deploy before that. Edit the `.md`.
+- Don't create a `blog/<slug>.html`. There is one post page and it is
+  `blog/post.html`; per-post files are exactly what the owner asked to be
+  rid of. Edit the `.md`.
+- Don't delete `404.html`. Posts used to live at `/blog/<slug>.html` and
+  those links were shared; it is the only thing keeping them working.
 - Don't put anything post-specific in `style.css` — it's shared with the
   deck. Rules shared by posts go in `blog/post.css`. A `.md` has no slot for
   CSS at all, which is the point.

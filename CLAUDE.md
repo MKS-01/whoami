@@ -27,14 +27,16 @@ index.html                the scroll-snap deck — markup only now
 deck.css / deck.js        deck-only CSS and behaviour. Linked by index.html
                           and NOTHING else (.screen + snap, .mac + .app-*,
                           .projects, .hint; the track factory, the observers)
+blog/post.html            THE post page — ONE file serves every post.
+                          Reads ?p=<slug> and renders it in the browser
+blog/render.js            the markdown renderer + the page wiring
 blog/post.css             shared by every post: .wrap, .post prose rhythm,
                           headings, pre/code, tables, .hero, .eof
 blog/posts/<slug>.md      THE SOURCE OF A POST — front matter + markdown
 blog/posts/_template.md   copy-me skeleton for a new post
-blog/<slug>.html          GENERATED from the .md. Committed and served
-                          as-is. Never hand-edit one
-tools/build-blog.py       the generator (stdlib only)
-tools/post-template.html  the page chrome every post is poured into
+404.html                  a router, no chrome: maps the old
+                          /blog/<slug>.html URLs onto post.html
+tools/build-blog.py       writes the #blog list into index.html (stdlib only)
 ```
 
 It was a single file until the blog arrived (July 2026). A post is long-form
@@ -49,30 +51,44 @@ Both were pulled into single sources — `blog/post.css` and `favicon.svg`.
 **Rule of thumb: if you're pasting the same block into a second file, it
 wants its own file.**
 
-### There is now a build step, and here is its exact boundary
+### One template, markdown posts (owner's call, July 2026)
 
-Third time the same rule bit: every `blog/*.html` carried ~55 lines of
-identical chrome, and each post's title/date/read-time/description was typed
-a *second* time into an `<li>` in `index.html`. HTML can't dedupe that on its
-own. So posts are written as `blog/posts/<slug>.md` and
-`python3 tools/build-blog.py` generates the pages and the list.
+Every `blog/<slug>.html` used to carry ~55 lines of identical chrome, and
+each post's title/date/read-time/description was typed a *second* time into
+an `<li>` in `index.html`. Now there is **one** post page —
+`blog/post.html` — and it renders any post client-side from
+`blog/posts/<slug>.md`. There are no per-post HTML files, and adding a post
+never adds one.
 
-**What the old "never a build step" rule protected is all still true**, and
-that is the line to hold:
+The owner asked for this directly ("single html template for blog and to
+avoid multiple blog html, post format in markdown") after a first pass that
+generated the pages at build time. **Don't reintroduce per-post HTML.**
 
-- the generated HTML is **committed**, so Pages serves plain static files
-- `file://` still works; **no client-side rendering**, no JS in the render path
-- **no dependencies** — Python 3 stdlib, and nothing at all at serve time
-- the generator is a local convenience. Deleting it would break authoring,
-  not the site
+What it costs, all three deliberate and accepted:
 
-So: never make the *site* depend on a tool. Adding a runtime markdown
-renderer, a syntax highlighter, or a generator that has to run before the
-page works would cross the line this doesn't.
+- **A post can't be opened over `file://`** — `fetch` is blocked there. The
+  page says so and tells you to run `python3 -m http.server`. The landing
+  page is unaffected and still opens straight off disk.
+- **Share cards are generic.** One shell serves every post, so
+  `og:title`/`og:description` describe the blog, not the post — scrapers
+  don't run JS. `document.title` is still set per post.
+- **No JS, no post.** Acceptable for a page whose whole content is fetched.
 
-The generator also **enforces** rules that used to be prose in the skills and
-were therefore optional: it fails the build on a post over 1000 words, a slug
-over 23 chars, or an 11th post.
+Old links still work: posts lived at `/blog/<slug>.html` and those URLs were
+shared, so `404.html` catches them and redirects to `post.html?p=<slug>`.
+Never delete that file.
+
+**`tools/build-blog.py` survives for one job**: the post list on the landing
+page. Nothing in a browser can enumerate a directory over http, so the
+slugs, titles, dates and read-times are baked into `index.html` between the
+`BUILD:` markers. It also enforces what the browser has no good way to
+complain about — the 1000-word ceiling, the 23-char slug, the ~10-post cap.
+
+⚠️ **Read time is computed in two places** — `readTime()` in
+`blog/render.js` (for the page) and `word_count()` in `tools/build-blog.py`
+(for the list). Same formula, same exclusions. Change one and you must
+change the other, or a post advertises one length on the list and another on
+the page.
 
 CSS layers, narrowest scope last: `style.css` → `deck.css` (the deck) or
 `blog/post.css` (posts) → a page's inline `<style>`. A post needs **no
@@ -85,17 +101,15 @@ has no slot for it. That's deliberate; CSS a post needs goes in `post.css`.
 every post at once.
 
 **Adding a post** (cap ~10, enforced): `cp blog/posts/_template.md
-blog/posts/<slug>.md`, write it, then `python3 tools/build-blog.py`. That
-writes `blog/<slug>.html` **and** rewrites the post list on the landing page.
-You do not touch `index.html`, renumber `--i`, count words, or re-balance the
-`.bpage` groups — all of it is computed. Deleting the `.md` and rebuilding
-removes the post cleanly. See the `writing-a-blog-post` skill for the format.
+blog/posts/<slug>.md`, write it, then `python3 tools/build-blog.py` to
+refresh the landing list. That is the whole publish step — no new HTML file,
+no `<li>` to paste, no `--i` to renumber, no word counting, no `.bpage`
+re-balancing. Deleting the `.md` and rebuilding removes the post. See the
+`writing-a-blog-post` skill for the format.
 
-⚠️ **Never edit a `blog/*.html` by hand** — the next build overwrites it. They
-open with a `GENERATED` comment saying so, and
 `python3 tools/build-blog.py --check` runs in the Pages workflow, so a
-hand-edit or a forgotten rebuild fails the deploy instead of quietly
-diverging from its source.
+forgotten rebuild fails the deploy rather than shipping a list that
+disagrees with the posts.
 
 Three screens — `home`, `blog`, `projects` — and that cap is the owner's
 ("landing page not exceed more than 3 scrolls", July 2026). **Two of them
@@ -149,9 +163,16 @@ sits at the bottom of a tall stacked render). For mobile checks, use a test
 copy with `body { width: 390px }` and probe layout via an injected script +
 `--dump-dom`, because the real viewport can't be forced below 500px.
 
-For a blog change, the cheap check first: `python3 tools/build-blog.py` then
-`git diff` — the generator's output is stable, so the diff is exactly your
-change and nothing else.
+⚠️ **A post cannot be verified over `file://`** — `fetch` is blocked there,
+so you'll screenshot the "can't load" message and think you broke it. Serve
+the repo first:
+
+```bash
+python3 -m http.server 8899
+# then screenshot http://localhost:8899/blog/post.html?p=<slug>
+```
+
+The landing page still renders fine straight off disk.
 
 Note: this headless environment refuses programmatic scrolling (even a plain
 `window.scrollTo` reports 0), so scroll-driven behavior and tap navigation

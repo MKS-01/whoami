@@ -11,8 +11,9 @@ blurb: one dry line — this is the ls entry on the blog screen.
 ---
 
 Copy me: `cp blog/posts/_template.md blog/posts/<slug>.md`, fill it in, then
-`python3 tools/build-blog.py`. That writes blog/<slug>.html and rewrites the
-post list on the landing page — you do not touch either by hand.
+`python3 tools/build-blog.py` to refresh the post list on the landing page.
+There is no HTML file to create — `blog/post.html` renders this one at
+`blog/post.html?p=<slug>` the moment it exists.
 
 The filename is the slug: lowercase, hyphenated, 23 characters at most. Read
 time, the `--i` print order and the paging are all computed; the build fails
