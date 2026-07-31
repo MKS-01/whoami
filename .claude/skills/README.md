@@ -26,8 +26,8 @@ frontmatter, then the instructions).
 - **writing-a-blog-post/** — post-specific: the `less(1)` conceit, the
   markdown subset and front matter, the 85%-technical shape rule, the
   5-minute ceiling, the date rules, and the one-command publish step
-  (write `blog/posts/<slug>.md`, run `python3 tools/build-blog.py` to refresh
-  the landing list). **There are no per-post HTML files** — `blog/post.html`
+  (write `blogs/<slug>.md`, run `bun run check` to refresh
+  the landing list). **There are no per-post HTML files** — `blogs/index.html`
   renders them all. Assumes `portfolio-conventions` for the
   underlying design system, so read this one second, not instead of it.
 

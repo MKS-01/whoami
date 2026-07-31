@@ -6,7 +6,7 @@
    Page-specific layout stays in that page's own inline <style>, which is
    loaded after this file and therefore wins on equal specificity:
      index.html   → .screen + scroll-snap, .mac + .app-*, .projects, .hint
-     blog/*.html  → .post prose rhythm, headings, code blocks
+     blogs/       → .blog prose rhythm, headings, code blocks
 
    NOTE: `scroll-snap-type` is deliberately NOT here. It belongs to the deck
    only — a blog post is long-form scrolling text and mandatory snap would

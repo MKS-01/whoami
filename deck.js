@@ -1,12 +1,13 @@
 /* ── deck-only behaviour ──────────────────────────────────────────────
-   Linked by index.html only. Loaded at the end of <body>, without `defer`,
-   because it reads layout and expects the deck's markup to already exist —
-   keep it in that position if you move the tag.
+   Linked by index.html only, as a module at the end of <body>: it reads
+   layout, so it expects the deck's markup to exist, and it imports the
+   markdown parser to draw the post list.
 
    theme.js (the accent toggle, the © year) is separate and loads in <head>
-   on every page, posts included. Nothing here is shared with a post.
+   on every page, posts included. Nothing else here is shared with a post.
 
    Was an inline <script> in index.html; see deck.css for why it moved. ─ */
+import { loadPost } from "./blogs/markdown.js";
   /* ── horizontal tracks ──────────────────────────────────────────────
      Two screens page their content sideways so the deck stays at three
      scrolls: #projects (three man pages) and #blog (the post list, three
@@ -153,11 +154,73 @@
     };
   };
 
-  /* keyed by the screen id each track lives on */
+  /* keyed by the screen id each track lives on. `blog` starts null: its
+     pages don't exist until the post list has been fetched and drawn, and
+     makeTrack measures children, so it has to wait. */
   const tracks = {
     projects: makeTrack("mantrack", true),
-    blog: makeTrack("blogtrack", false)
+    blog: null
   };
+
+  /* ── the post list ──────────────────────────────────────────────────
+     Drawn here rather than baked into index.html by a generator. The one
+     thing a browser cannot do is enumerate a directory, so blogs/blogs.txt
+     carries the slugs in display order — one line per post, and the pin is
+     simply the first line. Everything else (title, date, blurb, read time)
+     comes out of each post's own front matter, so nothing is duplicated
+     and publishing is a .md plus a line in that file.
+
+     Cost: the landing fetches every post's markdown. At the owner's ~10
+     post cap that is well under 100KB, it starts after the deck is already
+     painted, and it buys away the whole generate-and-commit step. */
+  const PER_PAGE = 3;
+
+  const listEntry = (post, i) => {
+    const pin = post.meta.pinned === "true"
+      ? 'pinned <span class="sep">·</span> ' : "";
+    return `
+          <li class="in" style="--i:${i}">
+            <a href="blogs/?p=${post.slug}">
+              <span class="name">${post.slug}</span>
+              <p class="desc">${post.meta.blurb}<span class="meta">${pin}${post.meta.date}` +
+             ` <span class="sep">·</span> ${post.minutes} min</span></p>
+            </a>
+          </li>`;
+  };
+
+  const drawBlogList = async () => {
+    const track = document.getElementById("blogtrack");
+    if (!track) return;
+
+    const res = await fetch("blogs/blogs.txt");
+    if (!res.ok) throw new Error("blogs/blogs.txt is missing");
+    const slugs = (await res.text()).split("\n").map((s) => s.trim()).filter(Boolean);
+
+    const posts = await Promise.all(slugs.map((s) => loadPost(s, "blogs/")));
+
+    let n = 1;
+    const pages = [];
+    for (let i = 0; i < posts.length; i += PER_PAGE) {
+      const rows = posts.slice(i, i + PER_PAGE).map((p) => listEntry(p, n++)).join("");
+      pages.push(`<div class="bpage">\n        <ul class="output projects">${rows}\n        </ul>\n        </div>`);
+    }
+    track.innerHTML = pages.join("\n        ");
+
+    const scope = track.closest(".screen");
+    scope.querySelector(".segs").innerHTML = "<i><b></b></i>".repeat(pages.length);
+    scope.querySelector(".tcount").textContent = `1/${pages.length}`;
+
+    /* only now do the pages exist to measure */
+    tracks.blog = makeTrack("blogtrack", false);
+    if (tracks.blog && scope.classList.contains("live-screen")) tracks.blog.screen(true);
+  };
+
+  drawBlogList().catch((e) => {
+    const track = document.getElementById("blogtrack");
+    if (track) {
+      track.innerHTML = `<p class="output">the post list didn't load — ${e.message}</p>`;
+    }
+  });
 
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((entries) => {
@@ -174,6 +237,9 @@
         if (e.isIntersecting) {
           const i = screens.indexOf(e.target);
           rail.forEach((d, j) => d.classList.toggle("active", j === i));
+          /* remembered so a track built after this fires (the blog list is
+             fetched) can tell whether its screen is already in view */
+          screens.forEach((s) => s.classList.toggle("live-screen", s === e.target));
           /* #projects has no app of its own — the live card names it. */
           const here = tracks[e.target.id];
           setApp((here && here.liveId()) || e.target.id);

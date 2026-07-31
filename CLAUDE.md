@@ -27,16 +27,26 @@ index.html                the scroll-snap deck — markup only now
 deck.css / deck.js        deck-only CSS and behaviour. Linked by index.html
                           and NOTHING else (.screen + snap, .mac + .app-*,
                           .projects, .hint; the track factory, the observers)
-blog/post.html            THE post page — ONE file serves every post.
-                          Reads ?p=<slug> and renders it in the browser
-blog/render.js            the markdown renderer + the page wiring
-blog/post.css             shared by every post: .wrap, .post prose rhythm,
+blogs/index.html          THE post page — ONE file serves every post,
+                          at /blogs/?p=<slug>. Bare /blogs/ bounces to the
+                          deck's #blog screen; there is no index listing
+blogs/render.js           that page's wiring
+blogs/markdown.js         the markdown parser — the ONLY copy. Imported by
+                          render.js AND by deck.js for the landing list
+blogs/blogs.txt           slugs in display order, one per line. The pin is
+                          the first line. The one thing a browser can't
+                          work out for itself
+blogs/blog.css            shared by every post: .wrap, .blog prose rhythm,
                           headings, pre/code, tables, .hero, .eof
-blog/posts/<slug>.md      THE SOURCE OF A POST — front matter + markdown
-blog/posts/_template.md   copy-me skeleton for a new post
+blogs/<slug>.md           A POST. Front matter + markdown, and the only
+                          file you create when publishing
+blogs/_template.md        copy-me skeleton for a new post
 404.html                  a router, no chrome: maps the old
-                          /blog/<slug>.html URLs onto post.html
-tools/build-blog.py       writes the #blog list into index.html (stdlib only)
+                          /blog(s)/<slug>.html URLs onto /blogs/?p=<slug>
+package.json              scripts only — NO dependencies, no lockfile,
+                          no node_modules. `bun run dev|check`
+tools/dev.js              dev server; imitates Pages, 404.html included
+tools/check-js.js         parses every script the site ships
 ```
 
 It was a single file until the blog arrived (July 2026). A post is long-form
@@ -47,7 +57,7 @@ guarantee drift. Hence `style.css`.
 The same logic applied again in the restructure: posts had each grown a
 byte-identical ~116-line inline `<style>`, and the favicon data-URI had
 *already* drifted (the landing's copy had a highlight path the posts' lacked).
-Both were pulled into single sources — `blog/post.css` and `favicon.svg`.
+Both were pulled into single sources — `blogs/blog.css` and `favicon.svg`.
 **Rule of thumb: if you're pasting the same block into a second file, it
 wants its own file.**
 
@@ -56,8 +66,8 @@ wants its own file.**
 Every `blog/<slug>.html` used to carry ~55 lines of identical chrome, and
 each post's title/date/read-time/description was typed a *second* time into
 an `<li>` in `index.html`. Now there is **one** post page —
-`blog/post.html` — and it renders any post client-side from
-`blog/posts/<slug>.md`. There are no per-post HTML files, and adding a post
+`blogs/index.html` — and it renders any post client-side from
+`blogs/<slug>.md`. There are no per-post HTML files, and adding a post
 never adds one.
 
 The owner asked for this directly ("single html template for blog and to
@@ -67,7 +77,7 @@ generated the pages at build time. **Don't reintroduce per-post HTML.**
 What it costs, all three deliberate and accepted:
 
 - **A post can't be opened over `file://`** — `fetch` is blocked there. The
-  page says so and tells you to run `python3 -m http.server`. The landing
+  page says so and tells you to run `bun run dev`. The landing
   page is unaffected and still opens straight off disk.
 - **Share cards are generic.** One shell serves every post, so
   `og:title`/`og:description` describe the blog, not the post — scrapers
@@ -75,41 +85,51 @@ What it costs, all three deliberate and accepted:
 - **No JS, no post.** Acceptable for a page whose whole content is fetched.
 
 Old links still work: posts lived at `/blog/<slug>.html` and those URLs were
-shared, so `404.html` catches them and redirects to `post.html?p=<slug>`.
+shared, so `404.html` catches them and redirects to `/blogs/?p=<slug>`.
 Never delete that file.
 
-**`tools/build-blog.py` survives for one job**: the post list on the landing
-page. Nothing in a browser can enumerate a directory over http, so the
-slugs, titles, dates and read-times are baked into `index.html` between the
-`BUILD:` markers. It also enforces what the browser has no good way to
-complain about — the 1000-word ceiling, the 23-char slug, the ~10-post cap.
+**Nothing is generated any more.** There was a Python generator writing the
+landing page's post list; it is gone. The one thing a browser genuinely
+cannot do is enumerate a directory, so `blogs/blogs.txt` names the slugs in
+display order — one line per post, the pin is simply the first line — and
+`deck.js` draws the list from that plus each post's own front matter. Title,
+date, blurb and read time therefore have exactly one home.
 
-⚠️ **Read time is computed in two places** — `readTime()` in
-`blog/render.js` (for the page) and `word_count()` in `tools/build-blog.py`
-(for the list). Same formula, same exclusions. Change one and you must
-change the other, or a post advertises one length on the list and another on
-the page.
+`blogs/markdown.js` is the only parser, imported by both the post page and
+the landing list, so a post cannot advertise one read time on the list and a
+different one on the page. Don't fork it.
+
+The word ceiling, slug length and post cap are no longer enforced by a
+build — they are in the `writing-a-blog-post` skill, and you have to hold
+them yourself.
 
 CSS layers, narrowest scope last: `style.css` → `deck.css` (the deck) or
-`blog/post.css` (posts) → a page's inline `<style>`. A post needs **no
+`blogs/blog.css` (posts) → a page's inline `<style>`. A post needs **no
 `<style>` block at all**, and there's nowhere to put one anyway — the .md
-has no slot for it. That's deliberate; CSS a post needs goes in `post.css`.
+has no slot for it. That's deliberate; CSS a post needs goes in `blog.css`.
 
 ⚠️ **`scroll-snap-type` belongs to the deck only.** It lives at the top of
 `deck.css`, which index.html links and no post ever does. Never move it into
-`style.css` or `blog/post.css` — either would break long-form scrolling on
+`style.css` or `blogs/blog.css` — either would break long-form scrolling on
 every post at once.
 
-**Adding a post** (cap ~10, enforced): `cp blog/posts/_template.md
-blog/posts/<slug>.md`, write it, then `python3 tools/build-blog.py` to
-refresh the landing list. That is the whole publish step — no new HTML file,
+**Adding a post** (cap ~10): `cp blogs/_template.md blogs/<slug>.md`, write
+it, then add the slug to `blogs/blogs.txt` in the position you want it
+listed. That is the whole publish step — no build, no HTML. That is the whole publish step — no new HTML file,
 no `<li>` to paste, no `--i` to renumber, no word counting, no `.bpage`
 re-balancing. Deleting the `.md` and rebuilding removes the post. See the
 `writing-a-blog-post` skill for the format.
 
-`python3 tools/build-blog.py --check` runs in the Pages workflow, so a
-forgotten rebuild fails the deploy rather than shipping a list that
-disagrees with the posts.
+`bun run check` parses every script and runs in the Pages workflow, because
+they ship unbundled with no compile step to fail first — a syntax error
+would otherwise reach visitors as a silently dead page.
+
+**The folder is `blogs/`, flat** — posts sit beside the page that renders
+them, with no `posts/` subdirectory. It was `blog/` until July 2026, kept
+that way only because renaming would break shared post URLs; moving to the
+one-template design changed those URLs anyway, so the directory now matches
+the `~/blogs` the site has always displayed. `404.html` catches **both** old
+shapes (`/blog/<slug>.html` and `/blogs/<slug>.html`).
 
 Three screens — `home`, `blog`, `projects` — and that cap is the owner's
 ("landing page not exceed more than 3 scrolls", July 2026). **Two of them
@@ -168,11 +188,14 @@ so you'll screenshot the "can't load" message and think you broke it. Serve
 the repo first:
 
 ```bash
-python3 -m http.server 8899
-# then screenshot http://localhost:8899/blog/post.html?p=<slug>
+bun run dev     # http://localhost:3000
+# then screenshot http://localhost:3000/blogs/?p=<slug>
 ```
 
-The landing page still renders fine straight off disk.
+`tools/dev.js` imitates Pages on purpose — directory indexes, and unknown
+paths served from `404.html` with a 404 status — so the legacy-URL redirect
+is testable locally instead of only in production. The landing page still
+renders fine straight off disk.
 
 Note: this headless environment refuses programmatic scrolling (even a plain
 `window.scrollTo` reports 0), so scroll-driven behavior and tap navigation
@@ -191,6 +214,24 @@ differently from Android:
   JS-driven (see the skill).
 
 Always test the short-viewport and safe-area cases, not just a tall phone.
+
+## Commands
+
+```bash
+bun run dev      # dev server on :3000 — REQUIRED to view a post
+bun run check    # parse every script (this is what CI runs)
+```
+
+There is no build. `package.json` declares **no dependencies on purpose** —
+scripts only, so there is no lockfile and no `node_modules`, and the repo
+still clones and runs with nothing installed.
+
+There is **no ESLint**, deliberately: it would mean a dependency tree for a
+repo whose whole point is not having one. `bun run check` catches what
+actually breaks a page — a syntax error in a script the browser loads with
+no build step to fail first. The style a linter would enforce is settled in
+the source instead: every script is `const`/`let`, arrow callbacks and
+template literals. Keep new code in that voice.
 
 ## Workflow norms
 

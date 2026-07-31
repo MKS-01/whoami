@@ -12,9 +12,9 @@
 <link rel="icon" href="../favicon.svg?v=2">
 <link rel="preload" href="../fonts/fira-code-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../style.css">
-<link rel="stylesheet" href="post.css">
+<link rel="stylesheet" href="blog.css">
 <script src="../theme.js"></script>
-<script src="render.js" defer></script>
+<script src="render.js" type="module"></script>
 </head>
 <body>
 <div class="wrap">
@@ -24,15 +24,15 @@
     </a>
   </header>
 
-  <p class="prompt in"><span class="cmd" id="post-cmd">less ~/blogs/</span></p>
+  <p class="prompt in"><span class="cmd" id="blog-cmd">less ~/blogs/</span></p>
 
-  <h2 class="post-title in" id="post-title"></h2>
-  <p class="post-meta in" id="post-meta"></p>
+  <h2 class="blog-title in" id="blog-title"></h2>
+  <p class="blog-meta in" id="blog-meta"></p>
 
-  <p class="cmdline in" id="post-repo" hidden></p>
-  <p class="cmdline in" id="post-demo" hidden></p>
-  <div id="post-hero" hidden></div>
-  <div class="post in" id="post-body"></div>
+  <p class="cmdline in" id="blog-repo" hidden></p>
+  <p class="cmdline in" id="blog-demo" hidden></p>
+  <div id="blog-hero" hidden></div>
+  <div class="blog in" id="blog-body"></div>
 
   <p class="eof in">(END)</p>
   <p class="cmdline in"><a href="../index.html#blog">cd ~/blogs</a></p>

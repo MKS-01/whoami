@@ -1,0 +1,9 @@
+{
+  "name": "mks-sh",
+  "private": true,
+  "description": "mks.sh — a terminal-styled portfolio and blog. No dependencies: this file is scripts only, so there is no lockfile and no node_modules. Clone it and it runs.",
+  "scripts": {
+    "dev": "bun run tools/dev.js",
+    "check": "bun run tools/check-js.js"
+  }
+}

@@ -10,10 +10,10 @@ blurb: one dry line — this is the ls entry on the blog screen.
 # demo: mks-01.github.io/<x>   adds an `open` line under that
 ---
 
-Copy me: `cp blog/posts/_template.md blog/posts/<slug>.md`, fill it in, then
-`python3 tools/build-blog.py` to refresh the post list on the landing page.
-There is no HTML file to create — `blog/post.html` renders this one at
-`blog/post.html?p=<slug>` the moment it exists.
+Copy me: `cp blogs/_template.md blogs/<slug>.md`, fill it in, then
+`bun run check` to refresh the post list on the landing page.
+There is no HTML file to create — `blogs/index.html` renders this one at
+`blogs/?p=<slug>` the moment it exists.
 
 The filename is the slug: lowercase, hyphenated, 23 characters at most. Read
 time, the `--i` print order and the paging are all computed; the build fails
@@ -25,7 +25,7 @@ Paragraphs, `## ` and `### ` headings, `- ` lists, `> ` quotes, **bold**,
 `inline code`, and [links](https://example.com). Line breaks inside a
 paragraph are kept, so wrap the source the way you want the HTML to wrap.
 
-Fenced code blocks, with the two annotations post.css styles — the prompt and
+Fenced code blocks, with the two annotations blog.css styles — the prompt and
 a comment — written as raw spans:
 
 ```
@@ -52,5 +52,5 @@ rules it has to follow; a decorative one will lose.
 ## don't
 
 No `<style>` here and none in the generated page — `../style.css` carries the
-tokens, `post.css` the prose rhythm. If you want CSS, it belongs in
-`post.css` so every post gets it.
+tokens, `blog.css` the prose rhythm. If you want CSS, it belongs in
+`blog.css` so every post gets it.
