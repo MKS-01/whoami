@@ -14,9 +14,28 @@ Thumbs.db
 *.swo
 *~
 
-# ── Node / tooling (if a build ever lands here) ──────
+# ── Bun ──────────────────────────────────────────────
+# package.json is scripts only and declares NO dependencies, so none of
+# this should ever appear. These entries exist to keep it that way: if a
+# dependency sneaks in, the install artefacts stay out of the repo and the
+# "clone it and it runs" promise in CLAUDE.md doesn't quietly break.
 node_modules/
-npm-debug.log*
-yarn-error.log*
-.cache/
-dist/
+bun.lock
+bun.lockb
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.log
+
+# ── Verification scratch ─────────────────────────────
+# Checking a change means rendering it (see the skills): test copies of a
+# page or a stylesheet with the snap/height rules patched out. They are
+# throwaway and must never be committed — the underscore prefix marks them.
+# `blogs/_template.md` is deliberately NOT matched: it is .md, and it stays.
+_*.html
+_*.css
+
+# ── Nothing is generated ─────────────────────────────
+# There is no build step and no output directory. Posts are blogs/*.md,
+# rendered in the browser; the landing list is drawn at run time. If you
+# find yourself adding `dist/` here, something has gone wrong upstream.
