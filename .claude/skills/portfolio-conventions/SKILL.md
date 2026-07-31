@@ -6,7 +6,9 @@ description: Design system, content voice, and animation conventions for MKS's m
 # mks.sh portfolio conventions
 
 Static terminal-styled site: `index.html` is a scroll-snap deck, `blog/*.html`
-are long-form posts, `style.css` is the shared vocabulary. Everything —
+are long-form posts **generated from `blog/posts/*.md`** by
+`tools/build-blog.py` (July 2026 — never hand-edit one), `style.css` is the
+shared vocabulary. Everything —
 header, whoami, project list, now-reading, footer, posts — reads like one
 continuous shell session. Every design and copy decision should reinforce
 that illusion, not break it.
@@ -20,25 +22,32 @@ models — and duplicating tokens across 11 files would guarantee drift.
 Three layers, narrowest scope last:
 
 - **`style.css`** — anything *two different kinds of page* share: `:root`
-  tokens, reset, base type, `.in` entrance, header/wordmark,
+  tokens, the `@font-face`, reset, base type, `.in` entrance, header/wordmark,
   `.prompt`/`.cmdline`/`.output`, `.reading`, `.man-*`, `footer`, `.rail`
   tmux bar, `.site-foot`, `.cursor`.
+- **`deck.css`** — deck-only: `.screen` + snap, `.mac` and every `.app-*`,
+  `.projects`, `.hint`, the mac's mobile height tiers. Linked by
+  `index.html` and **nothing else**; `deck.js` is its behavioural twin.
 - **`blog/post.css`** — shared by every post, meaningless on the deck:
   `.wrap`, `.post` prose rhythm, headings, `pre`/`code`, tables,
   `.hero`, `.eof`. Posts link it as `href="post.css"` (sibling file).
-- **`index.html` inline `<style>`** — deck-only: `.screen` + snap, `.mac` and
-  every `.app-*`, `.projects`, `.hint`, the mac's mobile height tiers.
-- **`blog/*.html` inline `<style>`** — genuinely one-off styling for that
-  single post. **Usually empty, and that's correct** — reach for it only
-  when a rule would be wrong on every other post.
+- **A page's inline `<style>`** — index.html keeps only the `<noscript>`
+  block, which has to be inline. **Posts have none and cannot have one** —
+  the `.md` source has no slot for it. That's deliberate.
 
 **The one rule that breaks everything if violated:** `scroll-snap-type: y
-mandatory` stays in `index.html`'s inline block. Never move it to
-`style.css` *or* `blog/post.css` — either would apply to every post and
-destroy long-form scrolling. The comment saying so is in both files; keep it.
+mandatory` stays at the top of `deck.css`. Never move it to `style.css` *or*
+`blog/post.css` — either would apply to every post and destroy long-form
+scrolling. What makes `deck.css` safe is that no post links it; keep it that
+way, and keep the comment saying so.
 
-Load order is `style.css` → `post.css` → inline, so each layer can override
+Load order is `style.css` → `deck.css`/`post.css`, so each layer can override
 the one before it at equal specificity without `!important`.
+
+**Why `deck.css`/`deck.js` exist (July 2026):** `index.html` had become 56KB
+— 744 lines of CSS and 244 of JS around ~290 lines of markup. Same reasoning
+as `post.css`: the file you open should be the thing you're editing. It's now
+19KB of markup.
 
 **Why `post.css` exists (July 2026):** the first two posts and the template
 each carried a byte-identical ~116-line inline block. At the owner's ~10-post
@@ -72,24 +81,31 @@ don't "fix" it by pinning the wordmark too.
 **If the tab icon looks like the OLD colour, it's cache, not code.**
 Browsers cache favicons aggressively and ignore a normal reload. The icon
 links carry a `?v=N` query for exactly this reason — bump N whenever
-`favicon.svg` changes colour, in `index.html` **and** every `blog/*.html`
-(including `_template.html`), or the change won't reach anyone who has
-already visited.
+`favicon.svg` changes colour, in `index.html` **and** in
+`tools/post-template.html`, then rebuild. Two places now, not seven.
 
 **The header wordmark alien must stay inline** — it fills from
 `var(--accent)`/`var(--bg)`, so it has to live in the page's cascade; an
 `<img>` or a cross-document `<use>` can't see those. It had drifted before
-(landing had 3 paths, every post had 2 — missing the highlight stroke); all
-copies are now identical 3-path markup. When you touch the alien,
-`grep -c '<path' ` across `index.html` and `blog/*.html` and confirm they
-still match. Hero graphics inside posts also use `var(--accent)` — they're
+(landing had 3 paths, every post had 2 — missing the highlight stroke).
+There are now exactly **two** copies — `index.html` and
+`tools/post-template.html` — because every post gets it from the template.
+When you touch the alien, change both and `grep -c '<path'` to confirm they
+match. Hero graphics inside posts also use `var(--accent)` — they're
 illustrations, not the mark, and should follow the theme.
 
 ## Blog
 
 **Writing or editing an actual post? Use the `writing-a-blog-post` skill** —
-it covers the post format, prose markup, read-time and the publish step.
+it covers the markdown format, front matter, read-time and the publish step.
 What follows is only how the blog wires into the deck.
+
+**The `#blog` list markup is generated.** It sits between
+`<!-- BUILD:blog-list … -->` markers in `index.html`, written by
+`tools/build-blog.py` from the posts' front matter, along with the
+`.segs`/`.tcount` indicator between the `BUILD:blog-tbar` markers. Change how
+the list *looks* in `render_list()` in that script, not in `index.html` —
+edits inside the markers are overwritten. Everything outside them is yours.
 
 - Post list is a deck screen (`#blog`, `$ ls ~/blogs`), reusing the exact
   `.projects` two-column shape as `ls ~/weekend-hacks`. Chosen over a
@@ -101,8 +117,8 @@ What follows is only how the blog wires into the deck.
   Three things must agree or the nav silently lies: DOM order of `.screen`,
   the order of `.rail` links (the observer maps them by index, not by
   href), and the window numbers in the labels. Posts' own two-window bar
-  hardcodes `1:blogs` — renumber `blog/*.html` **and** `_template.html`
-  with it.
+  hardcodes `1:blogs` — it lives in `tools/post-template.html`, so renumber
+  it there once and rebuild.
 - **The wip line is gone** (owner's call, July 2026). `$ ls
   ~/weekend-hacks/wip` and its "still a few unfinished weekend projects —
   updating soon" line were briefly folded onto the blog screen after
@@ -185,7 +201,9 @@ asked for a toggle rather than a swap — don't quietly drop a theme.
   `<head>`** so it stamps `data-theme` before first paint, and it *injects*
   the swatch markup into `.rail` rather than having it pasted into
   `index.html` plus every post. Preference persists in `localStorage`
-  under `mks-accent`.
+  under `mks-accent`. It also repaints `<meta name="theme-color">` (each
+  theme carries its own `--bg`) and stamps the `©` year — both were
+  duplicated markup before.
 - The default theme gets **no `data-theme` attribute at all** — bare
   `:root` styles it. `DEFAULT` in `theme.js` and the bare `:root` block in
   `style.css` must name the same theme.
@@ -193,10 +211,22 @@ asked for a toggle rather than a swap — don't quietly drop a theme.
   inherits the default's greens and looks muddy on another background.
 - `favicon.svg` can't follow the toggle (it loads outside the cascade), so
   it hardcodes the **default** theme's accent/bg. Change the default and
-  you must repaint that file's two literals.
+  you must repaint that file's two literals. `theme-color` *is* a real
+  element, so it does follow — that asymmetry is deliberate.
 
 Font: Fira Code, 14px, line-height 1.7. Don't introduce a second font or
 break monospace anywhere — the terminal conceit depends on it.
+
+**It is served from this repo** (July 2026), not Google: `fonts/` holds one
+latin *variable* woff2 covering 400/500/600, declared `@font-face` in
+`style.css` and preloaded by every page. That removed three render-blocking
+third-party requests per page and stopped telling Google who read which post.
+Don't re-add a `fonts.googleapis.com` link, and don't split the variable file
+into static weights. SIL OFL 1.1 — `fonts/OFL.txt` ships with it and has to.
+
+`→ ✔ ▲ ▶ ☕` render from the system monospace, not Fira Code: they fall
+outside every subset Google ever published for this family, so this is
+unchanged from before the self-hosting. Don't chase it with more subsets.
 
 ## Layout rules
 
@@ -268,7 +298,7 @@ call, July 2026, "slider more section in blogs if list keep incresing
 design will not impact".
 
 - **One factory drives both tracks.** `makeTrack(id, namesApp)` in
-  `index.html`'s inline script; `tracks = { projects, blog }` is keyed by
+  `deck.js`; `tracks = { projects, blog }` is keyed by
   the screen id each lives on. Don't fork a second copy of the auto-advance
   logic — the pause/resume rules are subtle and were already gotten wrong
   once (see `.running` vs `.paused` above).
@@ -428,9 +458,14 @@ width (~390px) to make sure nothing wraps or clips.
 
 **Headless Chrome gotchas (learned the hard way):**
 - Screenshots of fragment URLs (`index.html#pizow`) render blank — even for
-  trivial pages. To verify below-the-fold screens, `sed` a test copy that
-  replaces `min-height: 100dvh` with a fixed px height and pre-adds `on` to
-  the `.reveal` sections, then screenshot the whole stack in one tall window.
+  trivial pages. To verify below-the-fold screens, make a test copy of
+  **`deck.css`** that replaces `min-height: 100dvh` (and the `100vh`
+  fallback) with a fixed px height and drops `scroll-snap-type`, plus a test
+  copy of `index.html` that pre-adds `on` to the `.reveal` sections and
+  points at it; then screenshot the whole stack in one tall window. Since the
+  split, a scratch copy of `index.html` must have **four** hrefs rewritten to
+  absolute `file://` paths — `style.css`, `deck.css`, `theme.js`, `deck.js` —
+  or you screenshot an unstyled, inert page.
 - Window width clamps to 500px minimum (old and new headless). A
   `--window-size=390,…` screenshot is a 390px crop of a 500px layout — fake
   "overflow". To test true mobile width, constrain `body { width: 390px }`
