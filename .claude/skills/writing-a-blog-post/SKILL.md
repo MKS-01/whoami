@@ -354,9 +354,10 @@ close. That's the whole budget. Pick the three things worth saying and drop
 the rest — `home-server-on-512mb` lost its NAS internals, the 500 mA note
 and a Claude Code section to fit, and reads better for it.
 
-Nothing enforces the ceiling any more — the generator that used to refuse
-an over-length post is gone. Count before you publish, and keep to the
-budget yourself; the numbers above are the whole story.
+`bun run check` counts it for you and **fails over 1000 words**, along with
+a missing front-matter key, a bad date, an over-long slug, an unclosed code
+fence, and a post that is missing from (or absent behind) `blogs.txt`. It
+runs in CI on every push and PR, so an over-length post cannot deploy.
 
 **When you land over 1000 words, cut in this order:**
 

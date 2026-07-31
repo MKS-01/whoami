@@ -47,6 +47,7 @@ package.json              scripts only — NO dependencies, no lockfile,
                           no node_modules. `bun run dev|check`
 tools/dev.js              dev server; imitates Pages, 404.html included
 tools/check-js.js         parses every script the site ships
+tools/check-posts.js      loads every post the way the browser will
 ```
 
 It was a single file until the blog arrived (July 2026). A post is long-form
@@ -120,9 +121,26 @@ no `<li>` to paste, no `--i` to renumber, no word counting, no `.bpage`
 re-balancing. Deleting the `.md` and rebuilding removes the post. See the
 `writing-a-blog-post` skill for the format.
 
-`bun run check` parses every script and runs in the Pages workflow, because
-they ship unbundled with no compile step to fail first — a syntax error
-would otherwise reach visitors as a silently dead page.
+`bun run check` runs in the Pages workflow, on pushes **and on PRs**, with
+the deploy job gated behind it. Two halves:
+
+- `tools/check-js.js` parses every script. They ship unbundled with no
+  compile step to fail first, so a syntax error would otherwise reach
+  visitors as a silently dead page.
+- `tools/check-posts.js` loads every post **through `blogs/markdown.js`,
+  the same parser the browser runs** — front matter, required keys, date
+  format, slug length, the 1000-word ceiling, the ~10-post cap, and both
+  directions of `blogs.txt` (a slug with no `.md`, and a `.md` no slug
+  points at, which is the easiest thing to forget).
+
+This is what replaced the generator's enforcement. Since a post is parsed
+in the visitor's browser, a broken one isn't a failed build — it's a blank
+page someone finds — so the gate matters more now, not less.
+
+⚠️ **`blogs/*.md` and `blogs/blogs.txt` are runtime assets.** The browser
+fetches them. The workflow uploads the whole repo (`path: .`) and must keep
+doing so; slimming the artifact without them would leave the blog blank
+while every page still looked fine in CI.
 
 **The folder is `blogs/`, flat** — posts sit beside the page that renders
 them, with no `posts/` subdirectory. It was `blog/` until July 2026, kept
@@ -219,7 +237,7 @@ Always test the short-viewport and safe-area cases, not just a tall phone.
 
 ```bash
 bun run dev      # dev server on :3000 — REQUIRED to view a post
-bun run check    # parse every script (this is what CI runs)
+bun run check    # parse every script AND load every post (what CI runs)
 ```
 
 There is no build. `package.json` declares **no dependencies on purpose** —
