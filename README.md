@@ -1,7 +1,7 @@
 # mks.sh
 
-👽 The home for all the weekend hacks and the blogs about them, styled as a
-terminal session — coffee → code → tinker → repeat.
+👽 Weekend hacks and the posts about them, styled as a terminal session —
+coffee → code → tinker → repeat.
 Live at [mks-01.github.io/whoami](https://mks-01.github.io/whoami/).
 
 No framework, no dependencies, no build. `package.json` is scripts only —
@@ -42,6 +42,7 @@ deck.css  deck.js     deck-only styling and behaviour
 style.css             shared by both kinds of page: tokens, @font-face,
                       the terminal grammar, the tmux status bar
 theme.js              accent toggle, theme-color, the © year
+pointer.js            the alien cursor's label: open / read / jump / back
 404.html              router: keeps old /blog/<slug>.html links working
 
 blogs/  index.html    ONE page renders every post → /blogs/?p=<slug>
