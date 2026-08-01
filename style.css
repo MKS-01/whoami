@@ -157,6 +157,39 @@ body {
   a p, a li, a code, a h1, a h2, a h3 { cursor: var(--ptr-link); }
 }
 
+/* ── pointer label ──────────────────────────────────
+   With the arrow and the hand gone, a link's destination is the one thing
+   the sprite can't say. pointer.js parks one word beside the block cursor
+   — open / read / jump / back — so hovering a link tells you what the
+   click does before you spend it.
+   A cursor image is a data URI outside the cascade and cannot carry text,
+   which is why this is a real element following the pointer rather than a
+   fourth sprite per theme.
+   Same fine-pointer gate as the sprite: on touch there is nothing to
+   follow, and the label would just be a box that appears after a tap. */
+@media (hover: hover) and (pointer: fine) {
+  .ptrlabel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    padding: 1px 5px;
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 0.7rem;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    /* steps(), like every other reveal here: the label appears, it does
+       not glide in. No transition on transform — the position must track
+       the pointer exactly, not lag a frame behind it. */
+    transition: opacity 90ms steps(3, end);
+  }
+  .ptrlabel.on { opacity: 1; }
+}
+
 /* ── terminal print entrance ────────────────────── */
 /* Each line prints in sequence, like a shell streaming output. */
 .in {

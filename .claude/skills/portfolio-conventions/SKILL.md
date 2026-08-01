@@ -369,6 +369,34 @@ icon. Don't re-propose a saucer, a rocket, or any other new glyph here.
   falls back to a normal pointer rather than none.
 - Hotspot is `4 4`, on the head's upper-left edge.
 
+**The label (`pointer.js`, July 2026).** Hovering a link parks one lowercase
+verb beside the block cursor — the sprite says "clickable", the word says
+what the click *does*. Owner's ask: "whenever pointer reach to url we can
+add text … meaningful, in front alien icon."
+
+- Four verbs, and that's the whole vocabulary: **`open`** (external),
+  **`read`** (a post, `?p=`), **`jump`** (in-page `#hash`), **`back`**
+  (a post's `index.html#…` links). Owner picked the bare verb over
+  command-style (`less <slug>.md`), "click to …" and destination text.
+  Keep them one word — the label sits in the middle of the reading column
+  and anything longer becomes a banner.
+- It is a **real element**, not a fourth sprite: a cursor image is a data
+  URI outside the cascade and cannot carry text. It follows the pointer via
+  `pointermove` + one rAF, offset `42×6` — 42 clears the 40px `--ptr-link`
+  sprite, and 6 lines the text up with the block cursor rather than the
+  alien's head. It flips to the pointer's left near the right edge.
+- Same `(hover: hover) and (pointer: fine)` gate as the sprite, plus a
+  `pointerType !== "mouse"` bail: on touch there is no cursor to follow and
+  the label would just be a box that appears after a tap.
+- Hidden on `pointerdown`, `pointerleave`, window blur and any scroll —
+  a parked pointer whose link scrolls away otherwise keeps a stale word.
+- **Headless can't hover.** Verify by dispatching a synthetic
+  `new PointerEvent("pointerover", {pointerType:"mouse", clientX, clientY})`
+  at a link and reading `.ptrlabel` back through `--dump-dom`; the label is
+  left visible so the same test copy screenshots.
+- New script → add it to `FILES` in `tools/check-js.js`, or the gate
+  silently skips it.
+
 ## Pixel-dither vocabulary (July 2026)
 
 The owner asked for "a modern touch and animation, similar to mistral.ai".

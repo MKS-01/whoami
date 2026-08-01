@@ -23,6 +23,9 @@ fonts/                    Fira Code, latin variable woff2 + its OFL licence
 theme.js                  accent toggle: sets data-theme pre-paint, injects
                           the tmux-bar swatches, repaints theme-color, stamps
                           the © year. Linked by BOTH page kinds
+pointer.js                the word beside the alien pointer — open/read/jump/
+                          back, parked next to the block cursor while a link
+                          is hovered. Fine pointers only. BOTH page kinds
 index.html                the scroll-snap deck — markup only now
 deck.css / deck.js        deck-only CSS and behaviour. Linked by index.html
                           and NOTHING else (.screen + snap, .mac + .app-*,
